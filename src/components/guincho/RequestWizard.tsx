@@ -274,13 +274,14 @@ export function RequestWizard() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const isDestinoPage = pathname === "/destino" || pathname.startsWith("/destino/");
+  const isOrigemPage = pathname === "/origem" || pathname.startsWith("/origem/");
   const [step, setStep] = useState(() => (isDestinoPage ? 1 : 0)); // 0..5
 
   useEffect(() => {
     if (isDestinoPage) setStep((s) => (s === 0 ? 1 : s));
-    else setStep((s) => (s >= 1 ? 0 : s));
+    else if (isOrigemPage) setStep((s) => (s >= 1 ? 0 : s));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDestinoPage]);
+  }, [isDestinoPage, isOrigemPage]);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -514,7 +515,7 @@ export function RequestWizard() {
    */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (isDestinoPage) return; // GPS automático só na página de origem
+    if (!isOrigemPage) return; // GPS automático só na página /origem
     if (!navigator.geolocation || !window.isSecureContext) return;
 
     let cancelled = false;
@@ -584,7 +585,7 @@ export function RequestWizard() {
       if (perm) perm.onchange = null;
       clearGpsWatch();
     };
-  }, [isDestinoPage]);
+  }, [isOrigemPage]);
 
   // Agrupa coordenadas (~100 m) para não spammar reverse a cada tick do GPS
   const originReverseKey = useMemo(() => {
@@ -905,7 +906,7 @@ export function RequestWizard() {
       const mult = selectedOptionMultiplier();
       const base = estimate?.price ?? 1;
       const amount = Math.round(base * mult * 100) / 100;
-      const res = await fetch("/api/pay/beehive/pix-link", {
+      const res = await fetch("/api/pay/ironpay/pix-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -1171,6 +1172,17 @@ export function RequestWizard() {
                     : "Preço e pagamento")}
               {step === 5 && "Buscando / guincho a caminho"}
             </div>
+            {step === 0 && isOrigemPage ? (
+              <div className="mt-1 text-xs text-muted">
+                Sua cidade:{" "}
+                <span className="font-semibold text-text">
+                  {originLabel ||
+                    (origin.city && origin.state
+                      ? `${origin.city} - ${origin.state}`
+                      : origin.city || origin.state || "Detectando…")}
+                </span>
+              </div>
+            ) : null}
           </div>
 
           <div className="mb-4 h-2 w-full rounded-full bg-white/5">
@@ -1325,9 +1337,7 @@ export function RequestWizard() {
                   }));
                 }}
               />
-              <p className="text-xs leading-relaxed text-muted">
-                Lista ordenada pelo que está mais perto da sua origem. ↑↓ mudam a opção; Enter confirma. Toque fora da lista para fechar sem escolher.
-              </p>
+              
               </div>
             </div>
 

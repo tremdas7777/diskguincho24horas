@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OrigemRouteImport } from './routes/origem'
 import { Route as DestinoRouteImport } from './routes/destino'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -17,9 +18,15 @@ import { Route as ApiGeocodeRouteImport } from './routes/api/geocode'
 import { Route as ApiAutocompleteRouteImport } from './routes/api/autocomplete'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPayIronpayPixLinkRouteImport } from './routes/api/pay/ironpay/pix-link'
 import { Route as ApiPayBeehivePixLinkRouteImport } from './routes/api/pay/beehive/pix-link'
 import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/beehive/payment-link'
 
+const OrigemRoute = OrigemRouteImport.update({
+  id: '/origem',
+  path: '/origem',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DestinoRoute = DestinoRouteImport.update({
   id: '/destino',
   path: '/destino',
@@ -60,6 +67,11 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPayIronpayPixLinkRoute = ApiPayIronpayPixLinkRouteImport.update({
+  id: '/api/pay/ironpay/pix-link',
+  path: '/api/pay/ironpay/pix-link',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPayBeehivePixLinkRoute = ApiPayBeehivePixLinkRouteImport.update({
   id: '/api/pay/beehive/pix-link',
   path: '/api/pay/beehive/pix-link',
@@ -75,6 +87,7 @@ const ApiPayBeehivePaymentLinkRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -83,10 +96,12 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
+  '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -95,11 +110,13 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
+  '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -108,12 +125,14 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
+  '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/destino'
+    | '/origem'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -122,10 +141,12 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
+    | '/api/pay/ironpay/pix-link'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/destino'
+    | '/origem'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -134,10 +155,12 @@ export interface FileRouteTypes {
     | '/admin'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
+    | '/api/pay/ironpay/pix-link'
   id:
     | '__root__'
     | '/'
     | '/destino'
+    | '/origem'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -146,11 +169,13 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
+    | '/api/pay/ironpay/pix-link'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DestinoRoute: typeof DestinoRoute
+  OrigemRoute: typeof OrigemRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   ApiAutocompleteRoute: typeof ApiAutocompleteRoute
@@ -159,10 +184,18 @@ export interface RootRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   ApiPayBeehivePaymentLinkRoute: typeof ApiPayBeehivePaymentLinkRoute
   ApiPayBeehivePixLinkRoute: typeof ApiPayBeehivePixLinkRoute
+  ApiPayIronpayPixLinkRoute: typeof ApiPayIronpayPixLinkRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/origem': {
+      id: '/origem'
+      path: '/origem'
+      fullPath: '/origem'
+      preLoaderRoute: typeof OrigemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/destino': {
       id: '/destino'
       path: '/destino'
@@ -219,6 +252,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pay/ironpay/pix-link': {
+      id: '/api/pay/ironpay/pix-link'
+      path: '/api/pay/ironpay/pix-link'
+      fullPath: '/api/pay/ironpay/pix-link'
+      preLoaderRoute: typeof ApiPayIronpayPixLinkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pay/beehive/pix-link': {
       id: '/api/pay/beehive/pix-link'
       path: '/api/pay/beehive/pix-link'
@@ -239,6 +279,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DestinoRoute: DestinoRoute,
+  OrigemRoute: OrigemRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   ApiAutocompleteRoute: ApiAutocompleteRoute,
@@ -247,6 +288,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   ApiPayBeehivePaymentLinkRoute: ApiPayBeehivePaymentLinkRoute,
   ApiPayBeehivePixLinkRoute: ApiPayBeehivePixLinkRoute,
+  ApiPayIronpayPixLinkRoute: ApiPayIronpayPixLinkRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
