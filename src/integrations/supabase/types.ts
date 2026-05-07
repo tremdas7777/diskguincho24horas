@@ -14,7 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_settings: {
+        Row: {
+          beehive_public_key: string | null
+          beehive_secret_key: string | null
+          created_at: string
+          gateway_provider: string
+          id: number
+          updated_at: string
+        }
+        Insert: {
+          beehive_public_key?: string | null
+          beehive_secret_key?: string | null
+          created_at?: string
+          gateway_provider?: string
+          id?: number
+          updated_at?: string
+        }
+        Update: {
+          beehive_public_key?: string | null
+          beehive_secret_key?: string | null
+          created_at?: string
+          gateway_provider?: string
+          id?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
