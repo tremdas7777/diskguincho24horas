@@ -60,31 +60,34 @@ export function PixModal({
       />
 
       <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/95 shadow-soft backdrop-blur">
-        <div className="flex items-start justify-between gap-3 border-b border-border/70 p-4">
-          <div className="flex items-start gap-3">
-            <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_8px_24px_rgba(var(--brand-rgb),0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.25)]">
-              <img
-                src="/images/logo-guincho.png"
-                alt="Disk Guincho"
-                className="absolute inset-0 h-full w-full object-cover object-center scale-[1.15]"
-              />
+        {/* Cabeçalho fixo do Pix */}
+        <div className="sticky top-0 z-10 border-b border-border/70 bg-panel/95 backdrop-blur">
+          <div className="flex items-start justify-between gap-3 p-4">
+            <div className="flex items-start gap-3">
+              <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_8px_24px_rgba(var(--brand-rgb),0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.25)]">
+                <img
+                  src="/images/logo-guincho.png"
+                  alt="Disk Guincho"
+                  className="absolute inset-0 h-full w-full object-cover object-center scale-[1.15]"
+                />
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">
+                  Pagamento Pix
+                </div>
+                <div className="mt-1 text-base font-semibold text-text">{title}</div>
+                <div className="mt-1 text-sm text-muted">{amountLabel}</div>
+              </div>
             </div>
-            <div className="min-w-0">
-            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">
-              Pagamento Pix
-            </div>
-            <div className="mt-1 text-base font-semibold text-text">{title}</div>
-            <div className="mt-1 text-sm text-muted">{amountLabel}</div>
-            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-black/10 text-text"
+              aria-label="Fechar"
+            >
+              ✕
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="grid h-10 w-10 place-items-center rounded-2xl border border-border bg-black/10 text-text"
-            aria-label="Fechar"
-          >
-            ✕
-          </button>
         </div>
 
         <div className="grid gap-3 p-4">
