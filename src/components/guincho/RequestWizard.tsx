@@ -1,15 +1,10 @@
-
-import dynamic from "next/dynamic";
-import Image from "next/image";
+import { ClientOnly } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { haversineKm, type LatLng } from "@/lib/guincho/geo";
 import { maskCEP, maskPhoneBR, onlyDigits } from "@/lib/guincho/masks";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { PixModal } from "./PixModal";
-
-const MapPanel = dynamic(() => import("./MapPanel").then((m) => m.MapPanel), {
-  ssr: false,
-});
+import { MapPanel } from "./MapPanel";
 
 type VehicleType =
   | "carro"
@@ -855,13 +850,10 @@ export function RequestWizard() {
                   ☰
                 </button>
               <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-yellow-400 to-yellow-500 shadow-[0_2px_14px_rgba(245,158,11,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-yellow-200/80">
-                <Image
-                  src="/logo-guincho.png"
+                <img
+                  src="/images/logo-guincho.png"
                   alt="Disk Guincho"
-                  fill
-                  className="object-cover object-center scale-[1.28]"
-                  sizes="40px"
-                  priority
+                  className="absolute inset-0 h-full w-full object-cover object-center scale-[1.28]"
                 />
               </div>
               <div className="leading-tight">
@@ -1299,12 +1291,10 @@ export function RequestWizard() {
                 <div className="relative h-32 w-32">
                   <div className="absolute inset-0 animate-ping rounded-full bg-yellow-500/30 blur-md" />
                   <div className="relative z-[1] h-full w-full overflow-hidden rounded-full bg-gradient-to-b from-yellow-400 to-yellow-500 shadow-[0_4px_24px_rgba(245,158,11,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] ring-4 ring-yellow-200/70 [&_img]:pointer-events-none">
-                    <Image
-                      src="/logo-guincho.png"
+                    <img
+                      src="/images/logo-guincho.png"
                       alt=""
-                      fill
-                      className="animate-guincho-search object-cover object-center scale-[1.26]"
-                      sizes="128px"
+                      className="animate-guincho-search absolute inset-0 h-full w-full object-cover object-center scale-[1.26]"
                       aria-hidden
                     />
                   </div>
