@@ -161,7 +161,7 @@ function CardButton({
       className={[
         "group relative w-full rounded-2xl border px-4 py-4 text-left transition",
         selected
-          ? "border-yellow-500/60 bg-yellow-500/10 shadow-[0_18px_60px_rgba(245,158,11,0.12)]"
+          ? "border-[rgba(var(--brand-rgb),0.55)] bg-[rgba(var(--brand-rgb),0.12)] shadow-[0_18px_60px_rgba(var(--brand-rgb),0.14)]"
           : "border-border bg-panel/90 hover:bg-white/5",
       ].join(" ")}
     >
@@ -173,7 +173,9 @@ function CardButton({
         <div
           className={[
             "mt-1 h-6 w-6 rounded-full border transition",
-            selected ? "border-yellow-400 bg-yellow-500" : "border-border",
+            selected
+              ? "border-[rgba(var(--brand-rgb),0.55)] bg-[color:var(--brand)]"
+              : "border-border",
           ].join(" ")}
         />
       </div>
@@ -211,7 +213,7 @@ function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
       {...props}
       className={[
         "h-12 w-full rounded-xl border border-border bg-panel/90 px-3 text-[15px] text-text outline-none",
-        "placeholder:text-white/70 focus:border-yellow-500/70 focus:ring-4 focus:ring-yellow-500/15",
+        "placeholder:text-white/70 focus:border-[rgba(var(--brand-rgb),0.65)] focus:ring-4 focus:ring-[rgba(var(--brand-rgb),0.18)]",
         props.className ?? "",
       ].join(" ")}
     />
@@ -224,7 +226,7 @@ function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
       {...props}
       className={[
         "h-12 w-full rounded-xl border border-border bg-panel/90 px-3 text-[15px] text-text outline-none",
-        "focus:border-yellow-500/70 focus:ring-4 focus:ring-yellow-500/15",
+        "focus:border-[rgba(var(--brand-rgb),0.65)] focus:ring-4 focus:ring-[rgba(var(--brand-rgb),0.18)]",
         props.className ?? "",
       ].join(" ")}
     />
@@ -261,6 +263,15 @@ export function RequestWizard() {
   originCoordsRef.current = origin.coords ?? undefined;
   const [originLabel, setOriginLabel] = useState<string>("");
   const [destQuery, setDestQuery] = useState<string>("");
+  /** Ponto da sugestão em foco na busca — atualiza rota no mapa antes de confirmar. */
+  const [destPreviewCoords, setDestPreviewCoords] = useState<LatLng | null>(null);
+  const originReady =
+    Boolean(origin.coords) ||
+    Boolean(origin.street?.trim()) ||
+    onlyDigits(origin.cep).length === 8;
+
+  // Fluxo em 2 etapas: só mostra destino após avançar explicitamente.
+  const canShowDestinationUi = step >= 1;
   const sheetMaxHClass =
     step === 1
       ? "max-h-[min(70vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-12rem))]"
@@ -285,6 +296,10 @@ export function RequestWizard() {
   const [towPos, setTowPos] = useState<LatLng | null>(null);
   const [towAddr, setTowAddr] = useState<string>("");
   const driverTimersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    if (step !== 1) setDestPreviewCoords(null);
+  }, [step]);
 
   const estimate = useMemo(() => {
     if (!origin.coords || !dest.coords) return null;
@@ -342,6 +357,41 @@ export function RequestWizard() {
     }
   }
 
+  function clearGpsWatch() {
+    const prev = gpsWatchIdRef.current;
+    if (prev != null) {
+      try {
+        navigator.geolocation.clearWatch(prev);
+      } catch {
+        // ignore
+      }
+      gpsWatchIdRef.current = null;
+    }
+  }
+
+  function applyGeoPosition(pos: GeolocationPosition) {
+    setOrigin((o) => ({
+      ...o,
+      coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
+    }));
+    setGpsAccuracyM(pos.coords.accuracy);
+  }
+
+  function geoWatchOptions(): PositionOptions {
+    return { enableHighAccuracy: true, maximumAge: 1000, timeout: 15000 };
+  }
+
+  /** Primeira leitura: é o que costuma abrir o diálogo «Permitir localização?» do navegador. */
+  function requestGeolocationOnce(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+      navigator.geolocation.getCurrentPosition(resolve, reject, {
+        enableHighAccuracy: true,
+        maximumAge: 0,
+        timeout: 15000,
+      });
+    });
+  }
+
   async function useGPS() {
     setErr(null);
     if (typeof window !== "undefined" && !window.isSecureContext) {
@@ -354,44 +404,32 @@ export function RequestWizard() {
       setErr("Seu navegador não suporta GPS.");
       return;
     }
-    const prevWatch = gpsWatchIdRef.current;
-    if (prevWatch != null) {
-      try {
-        navigator.geolocation.clearWatch(prevWatch);
-      } catch {
-        // ignore
-      }
-      gpsWatchIdRef.current = null;
-    }
+    clearGpsWatch();
     setBusy("Obtendo sua localização exata…");
 
-    // Force a permission prompt + fast first fix, then keep updating like Uber/99
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setOrigin((o) => ({
-          ...o,
-          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-        }));
-        setGpsAccuracyM(pos.coords.accuracy);
-      },
-      () => {
-        // ignore here; watchPosition will surface the detailed error below
-      },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 12000 },
-    );
+    try {
+      const pos = await requestGeolocationOnce();
+      applyGeoPosition(pos);
+    } catch (e) {
+      const code = (e as GeolocationPositionError)?.code;
+      if (code === 1) {
+        setBusy(null);
+        setErr(
+          "Permissão de localização negada. Quando o navegador perguntar, escolha «Permitir», ou ative nas configurações do site.",
+        );
+        return;
+      }
+      /* timeout / indisponível: segue com watch como fallback */
+    }
 
     const id = navigator.geolocation.watchPosition(
       (pos) => {
-        setOrigin((o) => ({
-          ...o,
-          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-        }));
-        setGpsAccuracyM(pos.coords.accuracy);
+        applyGeoPosition(pos);
         setBusy(null);
       },
-      (e) => {
+      (err) => {
         setBusy(null);
-        const code = (e as GeolocationPositionError | undefined)?.code;
+        const code = (err as GeolocationPositionError | undefined)?.code;
         if (code === 1)
           setErr(
             "Permissão de localização negada. Ative o GPS/Localização no navegador e permita o acesso para este site.",
@@ -407,11 +445,10 @@ export function RequestWizard() {
             "Não consegui acessar sua localização. Permita o GPS e tente de novo.",
           );
       },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 12000 },
+      geoWatchOptions(),
     );
     gpsWatchIdRef.current = id;
 
-    // Stop tracking after 3 minutes to avoid draining battery on demo.
     window.setTimeout(() => {
       try {
         navigator.geolocation.clearWatch(id);
@@ -421,34 +458,79 @@ export function RequestWizard() {
     }, 3 * 60 * 1000);
   }
 
-  // Auto-start GPS (if previously allowed) for Uber-like experience
+  /**
+   * Ao carregar: se ainda não foi decidido, usa getCurrentPosition para o navegador pedir permissão.
+   * Se já negado, não insiste (o usuário pode usar «Usar minha localização» ou digitar endereço).
+   */
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (!navigator.geolocation) return;
-    if (gpsWatchIdRef.current != null) return;
+    if (!navigator.geolocation || !window.isSecureContext) return;
 
-    const id = navigator.geolocation.watchPosition(
-      (pos) => {
-        setOrigin((o) => ({
-          ...o,
-          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude },
-        }));
-        setGpsAccuracyM(pos.coords.accuracy);
-      },
-      () => {
-        // ignore on first load (user may deny)
-      },
-      { enableHighAccuracy: true, maximumAge: 1000, timeout: 8000 },
-    );
-    gpsWatchIdRef.current = id;
+    let cancelled = false;
+
+    const startWatch = () => {
+      if (cancelled || gpsWatchIdRef.current != null) return;
+      const id = navigator.geolocation.watchPosition(
+        (pos) => {
+          applyGeoPosition(pos);
+        },
+        () => {
+          clearGpsWatch();
+        },
+        geoWatchOptions(),
+      );
+      gpsWatchIdRef.current = id;
+    };
+
+    const askBrowserOnceThenWatch = () => {
+      void requestGeolocationOnce()
+        .then((pos) => {
+          if (cancelled) return;
+          applyGeoPosition(pos);
+          startWatch();
+        })
+        .catch((e) => {
+          if (cancelled) return;
+          const code = (e as GeolocationPositionError)?.code;
+          if (code === 1) return;
+          startWatch();
+        });
+    };
+
+    let perm: PermissionStatus | undefined;
+
+    void (async () => {
+      try {
+        perm = await navigator.permissions.query({
+          name: "geolocation" as PermissionName,
+        });
+      } catch {
+        perm = undefined;
+      }
+      if (cancelled) return;
+
+      if (perm?.state === "denied") return;
+
+      askBrowserOnceThenWatch();
+
+      if (perm) {
+        perm.onchange = () => {
+          if (cancelled) return;
+          if (perm.state === "denied") {
+            clearGpsWatch();
+            return;
+          }
+          if (perm.state === "granted" && gpsWatchIdRef.current == null) {
+            askBrowserOnceThenWatch();
+          }
+        };
+      }
+    })();
 
     return () => {
-      try {
-        navigator.geolocation.clearWatch(id);
-      } catch {
-        // ignore
-      }
-      gpsWatchIdRef.current = null;
+      cancelled = true;
+      if (perm) perm.onchange = null;
+      clearGpsWatch();
     };
   }, []);
 
@@ -882,9 +964,12 @@ export function RequestWizard() {
         <MapPanel
           origin={origin.coords ?? undefined}
           dest={dest.coords ?? undefined}
+          destPreview={destPreviewCoords}
           tow={towPos ?? undefined}
           accuracyM={gpsAccuracyM}
-          followOrigin={Boolean(origin.coords && !dest.coords)}
+          followOrigin={Boolean(
+            origin.coords && !dest.coords && destPreviewCoords == null,
+          )}
           className="h-full w-full"
         />
         <div
@@ -910,7 +995,7 @@ export function RequestWizard() {
                 >
                   ☰
                 </button>
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-yellow-400 to-yellow-500 shadow-[0_2px_14px_rgba(245,158,11,0.6),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-yellow-200/80">
+              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_2px_14px_rgba(var(--brand-rgb),0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.35)]">
                 <img
                   src="/images/logo-guincho.png"
                   alt="Disk Guincho"
@@ -930,7 +1015,7 @@ export function RequestWizard() {
           <div className="mt-2.5 grid gap-2 sm:mt-3">
             <div className="flex flex-col gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:flex-row sm:items-center">
               <div className="flex min-w-0 items-start gap-2 sm:items-center">
-              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-500 sm:mt-0" />
+              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--brand)] sm:mt-0" />
               <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
                 {origin.coords
                   ? originLabel
@@ -945,7 +1030,7 @@ export function RequestWizard() {
               <button
                 type="button"
                 onClick={useGPS}
-                className="min-h-9 w-full rounded-xl bg-yellow-500 px-4 py-2 text-xs font-semibold text-black sm:w-auto"
+                className="min-h-9 w-full rounded-xl bg-[color:var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] sm:w-auto"
               >
                 {origin.coords ? "Atualizar localização" : "Usar minha localização"}
               </button>
@@ -960,24 +1045,42 @@ export function RequestWizard() {
               </div>
             </div>
 
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-start gap-2 sm:items-center">
-              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-white/70 sm:mt-0" />
-              <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
-                {dest.coords
-                  ? `Destino: ${destQuery || buildAddressLine(dest) || "Selecionado"}`
-                  : "Defina o destino (endereço)"}
+            {canShowDestinationUi ? (
+              <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="flex min-w-0 items-start gap-2 sm:items-center">
+                  <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-white/70 sm:mt-0" />
+                  <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
+                    {dest.coords
+                      ? `Destino: ${destQuery || buildAddressLine(dest) || "Selecionado"}`
+                      : "Agora defina o destino (endereço)"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="min-h-10 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
+                  title="Escolher destino"
+                >
+                  Destino
+                </button>
               </div>
+            ) : (
+              <div className="grid gap-2 rounded-2xl border border-border/70 bg-panel/50 px-3 py-2">
+                <div className="text-xs text-muted">
+                  1) Defina sua <span className="text-text font-semibold">origem</span>. 2) Toque em{" "}
+                  <span className="text-text font-semibold">Avançar</span> para escolher o destino.
+                </div>
+                <button
+                  type="button"
+                  disabled={!originReady}
+                  onClick={() => setStep(1)}
+                  className="min-h-10 w-full rounded-xl bg-[color:var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-40"
+                  title={originReady ? "Avançar para destino" : "Defina a origem primeiro"}
+                >
+                  Avançar para destino
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="min-h-9 w-full shrink-0 rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
-                title="Escolher destino"
-              >
-                Destino
-              </button>
-            </div>
+            )}
           </div>
         </div>
       </div>
@@ -1012,7 +1115,7 @@ export function RequestWizard() {
         <div className="pointer-events-auto mx-auto w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/90 shadow-soft backdrop-blur">
           <div className="p-3 sm:p-4">
           <div className="mb-3">
-            <div className="text-xs font-semibold uppercase tracking-wide text-yellow-400">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">
               Solicitar guincho
             </div>
             <div className="mt-1 text-base font-semibold text-text">
@@ -1032,7 +1135,7 @@ export function RequestWizard() {
 
           <div className="mb-4 h-2 w-full rounded-full bg-white/5">
             <div
-              className="h-2 rounded-full bg-yellow-500 transition-all"
+              className="h-2 rounded-full bg-[color:var(--brand)] transition-all"
               style={{ width: `${((step + 1) / 6) * 100}%` }}
             />
           </div>
@@ -1072,7 +1175,7 @@ export function RequestWizard() {
             <button
               type="button"
               onClick={useGPS}
-              className="h-12 w-full rounded-xl bg-yellow-500 font-semibold text-black hover:bg-yellow-400"
+              className="h-12 w-full rounded-xl bg-[color:var(--brand)] font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)]"
             >
               Usar minha localização
             </button>
@@ -1171,7 +1274,8 @@ export function RequestWizard() {
 
         {step === 1 ? (
           <div className="grid gap-4">
-            <div className="grid gap-2">
+            <div className="rounded-2xl border border-border/80 bg-panel/35 p-3 sm:p-4">
+              <div className="grid gap-3">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted">
                 Para onde vamos
               </div>
@@ -1180,8 +1284,10 @@ export function RequestWizard() {
                 value={destQuery}
                 onChange={setDestQuery}
                 bias={origin.coords ?? undefined}
+                onPreviewCoords={setDestPreviewCoords}
                 onPick={({ label, coords, parts }) => {
                   setErr(null);
+                  setDestPreviewCoords(null);
                   setDestQuery(label);
                   const cepOk =
                     parts?.cepDigits && onlyDigits(parts.cepDigits).length === 8;
@@ -1201,8 +1307,9 @@ export function RequestWizard() {
                   }));
                 }}
               />
-              <div className="text-xs text-muted">
-                Sugestões via OpenStreetMap (Brasil). Toque num resultado ou pressione Enter na primeira opção — o mapa e o preço atualizam na hora.
+              <p className="text-xs leading-relaxed text-muted">
+                Lista ordenada pelo que está mais perto da sua origem. ↑↓ mudam a opção; Enter confirma. Toque fora da lista para fechar sem escolher.
+              </p>
               </div>
             </div>
 
@@ -1354,8 +1461,8 @@ export function RequestWizard() {
                 aria-busy="true"
               >
                 <div className="relative h-32 w-32">
-                  <div className="absolute inset-0 animate-ping rounded-full bg-yellow-500/30 blur-md" />
-                  <div className="relative z-[1] h-full w-full overflow-hidden rounded-full bg-gradient-to-b from-yellow-400 to-yellow-500 shadow-[0_4px_24px_rgba(245,158,11,0.45),inset_0_1px_0_rgba(255,255,255,0.35)] ring-4 ring-yellow-200/70 [&_img]:pointer-events-none">
+                  <div className="absolute inset-0 animate-ping rounded-full bg-[rgba(var(--brand-rgb),0.30)] blur-md" />
+                  <div className="relative z-[1] h-full w-full overflow-hidden rounded-full bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_4px_24px_rgba(var(--brand-rgb),0.45),inset_0_1px_0_rgba(255,255,255,0.35)] ring-4 ring-[rgba(var(--brand-rgb),0.28)] [&_img]:pointer-events-none">
                     <img
                       src="/images/logo-guincho.png"
                       alt=""
@@ -1398,7 +1505,7 @@ export function RequestWizard() {
                       className={[
                         "flex w-full items-center justify-between gap-3 rounded-2xl border px-3 py-3 text-left transition",
                         selected
-                          ? "border-yellow-500/60 bg-yellow-500/10"
+                          ? "border-[rgba(var(--brand-rgb),0.55)] bg-[rgba(var(--brand-rgb),0.12)]"
                           : "border-border bg-panel/90 hover:bg-white/5",
                       ].join(" ")}
                     >
@@ -1536,7 +1643,7 @@ export function RequestWizard() {
                           className={[
                             "max-w-[92%] rounded-2xl px-3 py-2 text-sm",
                             m.from === "user"
-                              ? "ml-auto bg-yellow-500 text-black"
+                              ? "ml-auto bg-[color:var(--brand)] text-white"
                               : "mr-auto border border-border bg-panel/70 text-text",
                           ].join(" ")}
                         >
@@ -1558,7 +1665,7 @@ export function RequestWizard() {
                     <button
                       type="button"
                       onClick={sendChat}
-                      className="h-10 shrink-0 rounded-xl bg-yellow-500 px-4 text-sm font-semibold text-black hover:bg-yellow-400"
+                      className="h-10 shrink-0 rounded-xl bg-[color:var(--brand)] px-4 text-sm font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)]"
                     >
                       Enviar
                     </button>
@@ -1605,6 +1712,11 @@ export function RequestWizard() {
                   setStep(0);
                   return;
                 }
+                if (step === 0) {
+                  if (!originReady) return;
+                  setStep(1);
+                  return;
+                }
                 if (step === 4) {
                   // Sem travas: sempre permite buscar opções e iniciar pagamento.
                   if (dispatchPhase === "options") {
@@ -1623,7 +1735,7 @@ export function RequestWizard() {
                 Boolean(busy) ||
                 false
               }
-              className="h-12 flex-[1.4] rounded-xl bg-yellow-500 font-semibold text-black hover:bg-yellow-400 disabled:opacity-50"
+              className="h-12 flex-[1.4] rounded-xl bg-[color:var(--brand)] font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-50"
             >
               {step === 4
                 ? dispatchPhase === "options"

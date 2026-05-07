@@ -59,7 +59,7 @@ export function PixModal({
       <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/95 shadow-soft backdrop-blur">
         <div className="flex items-start justify-between gap-3 border-b border-border/70 p-4">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-yellow-400">
+            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">
               Pagamento Pix
             </div>
             <div className="mt-1 text-base font-semibold text-text">{title}</div>
@@ -116,7 +116,7 @@ export function PixModal({
               href={pixUrl}
               target="_blank"
               rel="noreferrer"
-              className="h-12 rounded-2xl bg-yellow-500 text-center text-sm font-semibold leading-[48px] text-black hover:bg-yellow-400"
+              className="h-12 rounded-2xl bg-[color:var(--brand)] text-center text-sm font-semibold leading-[48px] text-white hover:bg-[rgba(var(--brand-rgb),0.90)]"
             >
               Abrir Pix
             </a>

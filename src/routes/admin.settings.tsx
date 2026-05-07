@@ -80,7 +80,7 @@ function AdminSettingsPage() {
       <div className="mx-auto w-full max-w-2xl rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]/90 p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-yellow-400">Admin</div>
+            <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">Admin</div>
             <h1 className="mt-1 text-xl font-semibold">Configurações</h1>
             <p className="mt-2 text-sm text-[color:var(--color-muted)]">
               Coloque as chaves do gateway aqui. (Se deixar em branco, mantém o valor atual.)
@@ -162,7 +162,7 @@ function AdminSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="h-12 rounded-2xl bg-yellow-500 text-base font-semibold text-black hover:bg-yellow-400 disabled:opacity-60"
+              className="h-12 rounded-2xl bg-[color:var(--brand)] text-base font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-60"
             >
               {saving ? "Salvando…" : "Salvar"}
             </button>

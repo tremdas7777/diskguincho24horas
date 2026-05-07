@@ -49,7 +49,7 @@ function AdminLoginPage() {
   return (
     <main className="app-bg min-h-screen px-4 py-10 text-[color:var(--color-text)]">
       <div className="mx-auto w-full max-w-md rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]/90 p-6 shadow-soft">
-        <div className="text-xs font-semibold uppercase tracking-wide text-yellow-400">Admin</div>
+        <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">Admin</div>
         <h1 className="mt-1 text-xl font-semibold">Entrar no painel</h1>
         <p className="mt-2 text-sm text-[color:var(--color-muted)]">Use seu e-mail e senha de administrador.</p>
 
@@ -84,7 +84,7 @@ function AdminLoginPage() {
           <button
             type="submit"
             disabled={busy}
-            className="h-12 rounded-2xl bg-yellow-500 text-base font-semibold text-black hover:bg-yellow-400 disabled:opacity-60"
+            className="h-12 rounded-2xl bg-[color:var(--brand)] text-base font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-60"
           >
             {busy ? "Entrando…" : "Entrar"}
           </button>

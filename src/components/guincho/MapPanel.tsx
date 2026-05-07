@@ -76,6 +76,7 @@ function Follow({
 export function MapPanel({
   origin,
   dest,
+  destPreview,
   tow,
   accuracyM,
   followOrigin,
@@ -83,6 +84,8 @@ export function MapPanel({
 }: {
   origin?: LatLng;
   dest?: LatLng;
+  /** Sugestão da busca (ainda não confirmada): rota tracejada até este ponto. */
+  destPreview?: LatLng | null;
   tow?: LatLng;
   accuracyM?: number;
   followOrigin?: boolean;
@@ -115,6 +118,9 @@ export function MapPanel({
     });
   }, []);
 
+  const routeEnd = destPreview ?? dest;
+  const previewActive = destPreview != null;
+
   return (
     <div className={className}>
       <MapContainer
@@ -135,8 +141,8 @@ export function MapPanel({
 
         <Follow center={center} zoom={zoom} follow={Boolean(followOrigin && origin)} />
 
-        {origin && dest ? (
-          <FitOriginDestRoute origin={origin} dest={dest} />
+        {origin && routeEnd ? (
+          <FitOriginDestRoute origin={origin} dest={routeEnd} />
         ) : null}
 
         {origin ? (
@@ -158,29 +164,30 @@ export function MapPanel({
           </>
         ) : null}
 
-        {origin && dest ? (
+        {origin && routeEnd ? (
           <>
             <Polyline
               positions={[
                 [origin.lat, origin.lng],
-                [dest.lat, dest.lng],
+                [routeEnd.lat, routeEnd.lng],
               ]}
               pathOptions={{
                 color: "#0099FF",
-                weight: 7,
-                opacity: 0.95,
+                weight: previewActive ? 6 : 7,
+                opacity: previewActive ? 0.72 : 0.95,
                 lineCap: "round",
                 lineJoin: "round",
+                dashArray: previewActive ? "10 12" : undefined,
               }}
             />
             <CircleMarker
-              center={[dest.lat, dest.lng]}
-              radius={8}
+              center={[routeEnd.lat, routeEnd.lng]}
+              radius={previewActive ? 7 : 8}
               pathOptions={{
                 color: "#ffffff",
                 fillColor: "#0099FF",
-                fillOpacity: 1,
-                weight: 3,
+                fillOpacity: previewActive ? 0.65 : 1,
+                weight: previewActive ? 2 : 3,
               }}
             />
           </>

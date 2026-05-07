@@ -138,9 +138,15 @@
     border-color: var(--color-border);
   }
 
+  html {
+    background-color: var(--color-bg);
+  }
+
   body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    min-height: 100dvh;
+    overscroll-behavior-y: none;
   }
 }
 
@@ -155,6 +161,9 @@
 
 :root {
   color-scheme: dark;
+  --brand: #2EB7F1;
+  --brand-2: #79D6FF;
+  --brand-rgb: 46, 183, 241;
 }
 
 html, body { height: 100%; }
@@ -186,14 +195,14 @@ body.app-bg-root,
   content: "";
   position: absolute; inset: 0;
   border-radius: 999px;
-  background: #f59e0b;
-  box-shadow: 0 0 0 3px rgba(11, 15, 23, 0.8), 0 12px 30px rgba(245, 158, 11, 0.25);
+  background: var(--brand);
+  box-shadow: 0 0 0 3px rgba(11, 15, 23, 0.8), 0 12px 30px rgba(var(--brand-rgb), 0.25);
 }
 .gps-dot::after {
   content: "";
   position: absolute; left: 50%; top: 50%;
   width: 18px; height: 18px; border-radius: 999px;
-  background: rgba(245, 158, 11, 0.35);
+  background: rgba(var(--brand-rgb), 0.35);
   animation: gpsPulse 1.35s infinite;
 }
 

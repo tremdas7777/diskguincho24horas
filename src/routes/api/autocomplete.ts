@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { haversineKm, type LatLng } from "@/lib/guincho/geo";
 import { partsFromNominatimAddress } from "@/lib/guincho/nominatimParts";
 
 export const Route = createFileRoute("/api/autocomplete")({
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/api/autocomplete")({
         const url = new URL("https://nominatim.openstreetmap.org/search");
         url.searchParams.set("format", "jsonv2");
         url.searchParams.set("addressdetails", "1");
-        url.searchParams.set("limit", "8");
+        url.searchParams.set("limit", "12");
         url.searchParams.set("countrycodes", "br");
         url.searchParams.set("accept-language", "pt-BR");
         url.searchParams.set("q", q);
@@ -33,7 +34,7 @@ export const Route = createFileRoute("/api/autocomplete")({
         });
         if (!res.ok) return Response.json({ error: `Autocomplete failed (${res.status})` }, { status: 502 });
         const data = (await res.json()) as Array<any>;
-        const suggestions = (data ?? [])
+        let suggestions = (data ?? [])
           .map((it) => {
             const addr = (it.address ?? null) as Record<string, unknown> | null;
             return {
@@ -46,6 +47,17 @@ export const Route = createFileRoute("/api/autocomplete")({
             };
           })
           .filter((s) => s.label && Number.isFinite(s.lat) && Number.isFinite(s.lng));
+
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          const ref: LatLng = { lat, lng };
+          suggestions = suggestions
+            .map((s) => ({
+              ...s,
+              distanceKm: haversineKm(ref, { lat: s.lat, lng: s.lng }),
+            }))
+            .sort((a, b) => a.distanceKm - b.distanceKm);
+        }
+
         return Response.json({ suggestions });
       },
     },
