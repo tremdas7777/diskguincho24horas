@@ -339,6 +339,7 @@ export function RequestWizard() {
   const [pixOpen, setPixOpen] = useState(false);
   const [pixUrl, setPixUrl] = useState("");
   const [pixCopy, setPixCopy] = useState("");
+  const [pixTransactionHash, setPixTransactionHash] = useState("");
   const [paymentDone, setPaymentDone] = useState(false);
   const [chatText, setChatText] = useState("");
   const [chatMessages, setChatMessages] = useState<
@@ -903,6 +904,7 @@ export function RequestWizard() {
     try {
       setBusy("Gerando Pix…");
       setPaymentDone(false);
+      setPixTransactionHash("");
       const mult = selectedOptionMultiplier();
       const base = estimate?.price ?? 1;
       const amount = Math.round(base * mult * 100) / 100;
@@ -920,6 +922,7 @@ export function RequestWizard() {
         const demo = `pix-demo:${Date.now()}`;
         setPixUrl(demo);
         setPixCopy(demo);
+        setPixTransactionHash("");
         setPixOpen(true);
         return;
       }
@@ -927,6 +930,7 @@ export function RequestWizard() {
         setPixUrl(String(data.url));
         // fallback: copy is the same URL if Beehive doesn't expose the Pix payload here
         setPixCopy(String(data.url));
+        setPixTransactionHash(String(data.transactionHash ?? ""));
         setPixOpen(true);
       } else setErr("Link de pagamento inválido.");
     } catch {
@@ -934,11 +938,51 @@ export function RequestWizard() {
       const demo = `pix-demo:${Date.now()}`;
       setPixUrl(demo);
       setPixCopy(demo);
+      setPixTransactionHash("");
       setPixOpen(true);
     } finally {
       setBusy(null);
     }
   }
+
+  // Detecta automaticamente quando o Pix foi pago (IronPay).
+  useEffect(() => {
+    if (!pixOpen) return;
+    if (!pixTransactionHash) return;
+    let cancelled = false;
+    let tries = 0;
+    const maxTries = 80; // ~4 minutos (3s)
+
+    const tick = async () => {
+      tries += 1;
+      try {
+        const res = await fetch(
+          `/api/pay/ironpay/status?transactionHash=${encodeURIComponent(
+            pixTransactionHash,
+          )}`,
+          { cache: "no-store" },
+        );
+        const data = (await res.json().catch(() => null)) as any;
+        if (cancelled) return;
+        if (res.ok && data?.paid) {
+          setPaymentDone(true);
+          setPixOpen(false);
+          setStep(5);
+          return;
+        }
+      } catch {
+        // ignore and keep polling
+      }
+      if (!cancelled && tries < maxTries) {
+        window.setTimeout(tick, 3000);
+      }
+    };
+
+    void tick();
+    return () => {
+      cancelled = true;
+    };
+  }, [pixOpen, pixTransactionHash]);
 
   async function searchAndShowOptions() {
     setErr(null);
@@ -954,28 +998,24 @@ export function RequestWizard() {
     setBusy("Encontrando melhores opções…");
     await new Promise((r) => setTimeout(r, 900));
 
-    const baseEta = Math.max(
-      6,
-      Math.min(25, Math.round(((estimate?.minutes ?? 14) as number) / 2)),
-    );
     const opts = [
       {
         id: "opt_fast",
         label: "Guincho rápido",
-        etaMin: Math.max(4, baseEta - 2),
-        note: "Chega mais rápido (prioridade)",
+        etaMin: 10,
+        note: "Chega em ~10 minutos",
       },
       {
         id: "opt_premium",
         label: "Guincho premium",
-        etaMin: Math.max(6, baseEta + 1),
-        note: "Motorista melhor avaliado",
+        etaMin: 15,
+        note: "Chega em ~15 minutos",
       },
       {
         id: "opt_economy",
         label: "Guincho econômico",
-        etaMin: Math.max(8, baseEta + 5),
-        note: "Melhor preço",
+        etaMin: 30,
+        note: "Chega em ~30 minutos",
       },
     ];
     setDispatchOptions(opts);
@@ -1689,6 +1729,10 @@ export function RequestWizard() {
               type="button"
               onClick={() => {
                 if (step === 5) {
+                  if (paymentDone) {
+                    void navigate({ to: "/obrigado" });
+                    return;
+                  }
                   // Concluir chamado → novo chamado
                   setErr(null);
                   setBusy(null);
@@ -1698,6 +1742,7 @@ export function RequestWizard() {
                   setPixOpen(false);
                   setPixUrl("");
                   setPixCopy("");
+                  setPixTransactionHash("");
                   setPaymentDone(false);
                   setChatText("");
                   setChatMessages([]);
@@ -1741,7 +1786,9 @@ export function RequestWizard() {
                     ? "Procurando guinchos…"
                     : "Procurar guincho"
                 : step === 5
-                  ? "Concluir chamado"
+                  ? paymentDone
+                    ? "Finalizar"
+                    : "Concluir chamado"
                   : "Continuar"}
             </button>
           </div>
@@ -1766,12 +1813,6 @@ export function RequestWizard() {
         }
         pixUrl={pixUrl}
         copyText={pixCopy}
-        paidFollowupHint="Assim que o pagamento for concluído, abrirá um chat com o motorista."
-        onPaid={() => {
-          setPaymentDone(true);
-          setPixOpen(false);
-          setStep(5);
-        }}
       />
     </div>
   );

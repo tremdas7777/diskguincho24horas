@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OrigemRouteImport } from './routes/origem'
+import { Route as ObrigadoRouteImport } from './routes/obrigado'
 import { Route as DestinoRouteImport } from './routes/destino'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -18,6 +19,8 @@ import { Route as ApiGeocodeRouteImport } from './routes/api/geocode'
 import { Route as ApiAutocompleteRouteImport } from './routes/api/autocomplete'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
+import { Route as ApiPayIronpayStatusRouteImport } from './routes/api/pay/ironpay/status'
+import { Route as ApiPayIronpayProofRouteImport } from './routes/api/pay/ironpay/proof'
 import { Route as ApiPayIronpayPixLinkRouteImport } from './routes/api/pay/ironpay/pix-link'
 import { Route as ApiPayBeehivePixLinkRouteImport } from './routes/api/pay/beehive/pix-link'
 import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/beehive/payment-link'
@@ -25,6 +28,11 @@ import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/b
 const OrigemRoute = OrigemRouteImport.update({
   id: '/origem',
   path: '/origem',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ObrigadoRoute = ObrigadoRouteImport.update({
+  id: '/obrigado',
+  path: '/obrigado',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DestinoRoute = DestinoRouteImport.update({
@@ -67,6 +75,16 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/admin/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPayIronpayStatusRoute = ApiPayIronpayStatusRouteImport.update({
+  id: '/api/pay/ironpay/status',
+  path: '/api/pay/ironpay/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPayIronpayProofRoute = ApiPayIronpayProofRouteImport.update({
+  id: '/api/pay/ironpay/proof',
+  path: '/api/pay/ironpay/proof',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPayIronpayPixLinkRoute = ApiPayIronpayPixLinkRouteImport.update({
   id: '/api/pay/ironpay/pix-link',
   path: '/api/pay/ironpay/pix-link',
@@ -87,6 +105,7 @@ const ApiPayBeehivePaymentLinkRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -97,10 +116,13 @@ export interface FileRoutesByFullPath {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
+  '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -111,11 +133,14 @@ export interface FileRoutesByTo {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
+  '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/destino': typeof DestinoRoute
+  '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -126,12 +151,15 @@ export interface FileRoutesById {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
+  '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/destino'
+    | '/obrigado'
     | '/origem'
     | '/admin/login'
     | '/admin/settings'
@@ -142,10 +170,13 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/proof'
+    | '/api/pay/ironpay/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/destino'
+    | '/obrigado'
     | '/origem'
     | '/admin/login'
     | '/admin/settings'
@@ -156,10 +187,13 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/proof'
+    | '/api/pay/ironpay/status'
   id:
     | '__root__'
     | '/'
     | '/destino'
+    | '/obrigado'
     | '/origem'
     | '/admin/login'
     | '/admin/settings'
@@ -170,11 +204,14 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/proof'
+    | '/api/pay/ironpay/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DestinoRoute: typeof DestinoRoute
+  ObrigadoRoute: typeof ObrigadoRoute
   OrigemRoute: typeof OrigemRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -185,6 +222,8 @@ export interface RootRouteChildren {
   ApiPayBeehivePaymentLinkRoute: typeof ApiPayBeehivePaymentLinkRoute
   ApiPayBeehivePixLinkRoute: typeof ApiPayBeehivePixLinkRoute
   ApiPayIronpayPixLinkRoute: typeof ApiPayIronpayPixLinkRoute
+  ApiPayIronpayProofRoute: typeof ApiPayIronpayProofRoute
+  ApiPayIronpayStatusRoute: typeof ApiPayIronpayStatusRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -194,6 +233,13 @@ declare module '@tanstack/react-router' {
       path: '/origem'
       fullPath: '/origem'
       preLoaderRoute: typeof OrigemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/obrigado': {
+      id: '/obrigado'
+      path: '/obrigado'
+      fullPath: '/obrigado'
+      preLoaderRoute: typeof ObrigadoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/destino': {
@@ -252,6 +298,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pay/ironpay/status': {
+      id: '/api/pay/ironpay/status'
+      path: '/api/pay/ironpay/status'
+      fullPath: '/api/pay/ironpay/status'
+      preLoaderRoute: typeof ApiPayIronpayStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/pay/ironpay/proof': {
+      id: '/api/pay/ironpay/proof'
+      path: '/api/pay/ironpay/proof'
+      fullPath: '/api/pay/ironpay/proof'
+      preLoaderRoute: typeof ApiPayIronpayProofRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pay/ironpay/pix-link': {
       id: '/api/pay/ironpay/pix-link'
       path: '/api/pay/ironpay/pix-link'
@@ -279,6 +339,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DestinoRoute: DestinoRoute,
+  ObrigadoRoute: ObrigadoRoute,
   OrigemRoute: OrigemRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -289,6 +350,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPayBeehivePaymentLinkRoute: ApiPayBeehivePaymentLinkRoute,
   ApiPayBeehivePixLinkRoute: ApiPayBeehivePixLinkRoute,
   ApiPayIronpayPixLinkRoute: ApiPayIronpayPixLinkRoute,
+  ApiPayIronpayProofRoute: ApiPayIronpayProofRoute,
+  ApiPayIronpayStatusRoute: ApiPayIronpayStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

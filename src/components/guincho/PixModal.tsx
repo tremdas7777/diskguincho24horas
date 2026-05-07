@@ -9,8 +9,6 @@ export function PixModal({
   amountLabel,
   pixUrl,
   copyText,
-  onPaid,
-  paidFollowupHint,
 }: {
   open: boolean;
   onClose: () => void;
@@ -18,14 +16,17 @@ export function PixModal({
   amountLabel: string;
   pixUrl: string;
   copyText: string;
-  onPaid?: () => void;
-  paidFollowupHint?: string;
 }) {
   const [qr, setQr] = useState<string>("");
   const [copied, setCopied] = useState(false);
+  const [proofFileName, setProofFileName] = useState("");
+  const [proofBusy, setProofBusy] = useState<null | "encoding" | "uploading">(
+    null,
+  );
+  const [proofOk, setProofOk] = useState(false);
+  const [proofErr, setProofErr] = useState<string | null>(null);
 
   const payload = useMemo(() => copyText || pixUrl, [copyText, pixUrl]);
-  const isGenerating = !qr;
 
   useEffect(() => {
     if (!open) return;
@@ -119,7 +120,7 @@ export function PixModal({
             <div className="mt-2 break-all text-xs text-text">{payload}</div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid gap-3">
             <button
               type="button"
               onClick={async () => {
@@ -135,36 +136,95 @@ export function PixModal({
             >
               {copied ? "Copiado!" : "Copiar"}
             </button>
-            <a
-              href={pixUrl}
-              target="_blank"
-              rel="noreferrer"
-              className={[
-                "h-12 rounded-2xl text-center text-sm font-semibold leading-[48px] text-white",
-                "bg-[color:var(--brand)] hover:bg-[rgba(var(--brand-rgb),0.90)]",
-                isGenerating ? "pointer-events-none opacity-60" : "",
-              ].join(" ")}
-            >
-              Pagar no Pix
-            </a>
           </div>
 
-          {onPaid ? (
-            <div className="grid gap-2">
-              <button
-                type="button"
-                onClick={onPaid}
-                className="h-12 w-full rounded-2xl border border-border bg-black/20 text-sm font-semibold text-text hover:bg-white/5"
-              >
-                Já paguei (continuar)
-              </button>
-              {paidFollowupHint ? (
-                <div className="text-center text-xs text-muted">
-                  {paidFollowupHint}
+          <div className="mt-1 rounded-2xl border border-border bg-black/15 p-3">
+            <div className="text-xs font-semibold uppercase tracking-wide text-muted">
+              Pagamento não confirmou?
+            </div>
+            <div className="mt-1 text-xs text-muted">
+              Envie o comprovante (foto ou PDF) para análise.
+            </div>
+
+            <div className="mt-3 grid gap-2">
+              <input
+                type="file"
+                accept="image/*,application/pdf"
+                className="block w-full text-xs text-muted file:mr-3 file:rounded-xl file:border file:border-border file:bg-black/20 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-text"
+                onChange={async (e) => {
+                  const f = e.target.files?.[0];
+                  setProofOk(false);
+                  setProofErr(null);
+                  setProofFileName(f?.name ?? "");
+                  if (!f) return;
+                  if (f.size > 6 * 1024 * 1024) {
+                    setProofErr("Arquivo muito grande (máx. 6MB).");
+                    return;
+                  }
+                  try {
+                    setProofBusy("encoding");
+                    const dataUrl = await new Promise<string>((resolve, reject) => {
+                      const r = new FileReader();
+                      r.onload = () =>
+                        resolve(typeof r.result === "string" ? r.result : "");
+                      r.onerror = () => reject(new Error("read_error"));
+                      r.readAsDataURL(f);
+                    });
+                    const comma = dataUrl.indexOf(",");
+                    const base64 = comma >= 0 ? dataUrl.slice(comma + 1) : "";
+                    if (!base64) {
+                      setProofErr("Não foi possível ler o arquivo.");
+                      return;
+                    }
+                    setProofBusy("uploading");
+                    const res = await fetch("/api/pay/ironpay/proof", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        pixUrl,
+                        title,
+                        amountLabel,
+                        fileName: f.name,
+                        mimeType: f.type || "application/octet-stream",
+                        base64,
+                      }),
+                    });
+                    if (!res.ok) {
+                      setProofErr("Falha ao enviar comprovante. Tente novamente.");
+                      return;
+                    }
+                    setProofOk(true);
+                  } catch {
+                    setProofErr("Falha ao enviar comprovante. Tente novamente.");
+                  } finally {
+                    setProofBusy(null);
+                  }
+                }}
+              />
+
+              {proofFileName ? (
+                <div className="text-xs text-muted">
+                  Arquivo:{" "}
+                  <span className="font-semibold text-text">{proofFileName}</span>
+                </div>
+              ) : null}
+              {proofErr ? (
+                <div className="text-xs font-semibold text-red-300">{proofErr}</div>
+              ) : null}
+              {proofOk ? (
+                <div className="text-xs font-semibold text-emerald-300">
+                  Comprovante enviado. Vamos analisar e confirmar o pagamento.
+                </div>
+              ) : null}
+              {proofBusy ? (
+                <div className="text-xs text-muted">
+                  {proofBusy === "encoding"
+                    ? "Preparando arquivo…"
+                    : "Enviando comprovante…"}
                 </div>
               ) : null}
             </div>
-          ) : null}
+          </div>
         </div>
       </div>
     </div>
