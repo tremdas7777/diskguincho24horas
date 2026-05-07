@@ -21,10 +21,18 @@ import { Route as ApiAutocompleteRouteImport } from './routes/api/autocomplete'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
+import { Route as AdminFunilRouteImport } from './routes/admin.funil'
 import { Route as AdminFinancasRouteImport } from './routes/admin.financas'
+import { Route as AdminDashboardRouteImport } from './routes/admin.dashboard'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as ApiPublicAnalyticsRouteImport } from './routes/api/public/analytics'
 import { Route as ApiLeadsTrackRouteImport } from './routes/api/leads/track'
+import { Route as ApiAdminVerifyRouteImport } from './routes/api/admin/verify'
+import { Route as ApiAdminLeadsRouteImport } from './routes/api/admin/leads'
+import { Route as ApiAdminFunilRouteImport } from './routes/api/admin/funil'
+import { Route as ApiAdminFinancasRouteImport } from './routes/api/admin/financas'
+import { Route as ApiAdminDashboardRouteImport } from './routes/api/admin/dashboard'
+import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiPayIronpayStatusRouteImport } from './routes/api/pay/ironpay/status'
 import { Route as ApiPayIronpayProofRouteImport } from './routes/api/pay/ironpay/proof'
 import { Route as ApiPayIronpayPixLinkRouteImport } from './routes/api/pay/ironpay/pix-link'
@@ -91,9 +99,19 @@ const AdminLeadsRoute = AdminLeadsRouteImport.update({
   path: '/admin/leads',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminFunilRoute = AdminFunilRouteImport.update({
+  id: '/admin/funil',
+  path: '/admin/funil',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminFinancasRoute = AdminFinancasRouteImport.update({
   id: '/admin/financas',
   path: '/admin/financas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/admin/dashboard',
+  path: '/admin/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -109,6 +127,36 @@ const ApiPublicAnalyticsRoute = ApiPublicAnalyticsRouteImport.update({
 const ApiLeadsTrackRoute = ApiLeadsTrackRouteImport.update({
   id: '/api/leads/track',
   path: '/api/leads/track',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminVerifyRoute = ApiAdminVerifyRouteImport.update({
+  id: '/api/admin/verify',
+  path: '/api/admin/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminLeadsRoute = ApiAdminLeadsRouteImport.update({
+  id: '/api/admin/leads',
+  path: '/api/admin/leads',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFunilRoute = ApiAdminFunilRouteImport.update({
+  id: '/api/admin/funil',
+  path: '/api/admin/funil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminFinancasRoute = ApiAdminFinancasRouteImport.update({
+  id: '/api/admin/financas',
+  path: '/api/admin/financas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminDashboardRoute = ApiAdminDashboardRouteImport.update({
+  id: '/api/admin/dashboard',
+  path: '/api/admin/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminAnalyticsRoute = ApiAdminAnalyticsRouteImport.update({
+  id: '/api/admin/analytics',
+  path: '/api/admin/analytics',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPayIronpayStatusRoute = ApiPayIronpayStatusRouteImport.update({
@@ -145,7 +193,9 @@ export interface FileRoutesByFullPath {
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financas': typeof AdminFinancasRoute
+  '/admin/funil': typeof AdminFunilRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -153,6 +203,12 @@ export interface FileRoutesByFullPath {
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/financas': typeof ApiAdminFinancasRoute
+  '/api/admin/funil': typeof ApiAdminFunilRoute
+  '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
@@ -168,7 +224,9 @@ export interface FileRoutesByTo {
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financas': typeof AdminFinancasRoute
+  '/admin/funil': typeof AdminFunilRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -176,6 +234,12 @@ export interface FileRoutesByTo {
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
   '/admin': typeof AdminIndexRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/financas': typeof ApiAdminFinancasRoute
+  '/api/admin/funil': typeof ApiAdminFunilRoute
+  '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
@@ -192,7 +256,9 @@ export interface FileRoutesById {
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/financas': typeof AdminFinancasRoute
+  '/admin/funil': typeof AdminFunilRoute
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
@@ -200,6 +266,12 @@ export interface FileRoutesById {
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
   '/admin/': typeof AdminIndexRoute
+  '/api/admin/analytics': typeof ApiAdminAnalyticsRoute
+  '/api/admin/dashboard': typeof ApiAdminDashboardRoute
+  '/api/admin/financas': typeof ApiAdminFinancasRoute
+  '/api/admin/funil': typeof ApiAdminFunilRoute
+  '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
@@ -217,7 +289,9 @@ export interface FileRouteTypes {
     | '/obrigado'
     | '/origem'
     | '/admin/analytics'
+    | '/admin/dashboard'
     | '/admin/financas'
+    | '/admin/funil'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
@@ -225,6 +299,12 @@ export interface FileRouteTypes {
     | '/api/geocode'
     | '/api/reverse'
     | '/admin/'
+    | '/api/admin/analytics'
+    | '/api/admin/dashboard'
+    | '/api/admin/financas'
+    | '/api/admin/funil'
+    | '/api/admin/leads'
+    | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
     | '/api/pay/beehive/payment-link'
@@ -240,7 +320,9 @@ export interface FileRouteTypes {
     | '/obrigado'
     | '/origem'
     | '/admin/analytics'
+    | '/admin/dashboard'
     | '/admin/financas'
+    | '/admin/funil'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
@@ -248,6 +330,12 @@ export interface FileRouteTypes {
     | '/api/geocode'
     | '/api/reverse'
     | '/admin'
+    | '/api/admin/analytics'
+    | '/api/admin/dashboard'
+    | '/api/admin/financas'
+    | '/api/admin/funil'
+    | '/api/admin/leads'
+    | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
     | '/api/pay/beehive/payment-link'
@@ -263,7 +351,9 @@ export interface FileRouteTypes {
     | '/obrigado'
     | '/origem'
     | '/admin/analytics'
+    | '/admin/dashboard'
     | '/admin/financas'
+    | '/admin/funil'
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
@@ -271,6 +361,12 @@ export interface FileRouteTypes {
     | '/api/geocode'
     | '/api/reverse'
     | '/admin/'
+    | '/api/admin/analytics'
+    | '/api/admin/dashboard'
+    | '/api/admin/financas'
+    | '/api/admin/funil'
+    | '/api/admin/leads'
+    | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
     | '/api/pay/beehive/payment-link'
@@ -287,7 +383,9 @@ export interface RootRouteChildren {
   ObrigadoRoute: typeof ObrigadoRoute
   OrigemRoute: typeof OrigemRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminDashboardRoute: typeof AdminDashboardRoute
   AdminFinancasRoute: typeof AdminFinancasRoute
+  AdminFunilRoute: typeof AdminFunilRoute
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
@@ -295,6 +393,12 @@ export interface RootRouteChildren {
   ApiGeocodeRoute: typeof ApiGeocodeRoute
   ApiReverseRoute: typeof ApiReverseRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  ApiAdminAnalyticsRoute: typeof ApiAdminAnalyticsRoute
+  ApiAdminDashboardRoute: typeof ApiAdminDashboardRoute
+  ApiAdminFinancasRoute: typeof ApiAdminFinancasRoute
+  ApiAdminFunilRoute: typeof ApiAdminFunilRoute
+  ApiAdminLeadsRoute: typeof ApiAdminLeadsRoute
+  ApiAdminVerifyRoute: typeof ApiAdminVerifyRoute
   ApiLeadsTrackRoute: typeof ApiLeadsTrackRoute
   ApiPublicAnalyticsRoute: typeof ApiPublicAnalyticsRoute
   ApiPayBeehivePaymentLinkRoute: typeof ApiPayBeehivePaymentLinkRoute
@@ -390,11 +494,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLeadsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/funil': {
+      id: '/admin/funil'
+      path: '/admin/funil'
+      fullPath: '/admin/funil'
+      preLoaderRoute: typeof AdminFunilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/financas': {
       id: '/admin/financas'
       path: '/admin/financas'
       fullPath: '/admin/financas'
       preLoaderRoute: typeof AdminFinancasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
+      path: '/admin/dashboard'
+      fullPath: '/admin/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin/analytics': {
@@ -416,6 +534,48 @@ declare module '@tanstack/react-router' {
       path: '/api/leads/track'
       fullPath: '/api/leads/track'
       preLoaderRoute: typeof ApiLeadsTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/verify': {
+      id: '/api/admin/verify'
+      path: '/api/admin/verify'
+      fullPath: '/api/admin/verify'
+      preLoaderRoute: typeof ApiAdminVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/leads': {
+      id: '/api/admin/leads'
+      path: '/api/admin/leads'
+      fullPath: '/api/admin/leads'
+      preLoaderRoute: typeof ApiAdminLeadsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/funil': {
+      id: '/api/admin/funil'
+      path: '/api/admin/funil'
+      fullPath: '/api/admin/funil'
+      preLoaderRoute: typeof ApiAdminFunilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/financas': {
+      id: '/api/admin/financas'
+      path: '/api/admin/financas'
+      fullPath: '/api/admin/financas'
+      preLoaderRoute: typeof ApiAdminFinancasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/dashboard': {
+      id: '/api/admin/dashboard'
+      path: '/api/admin/dashboard'
+      fullPath: '/api/admin/dashboard'
+      preLoaderRoute: typeof ApiAdminDashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/analytics': {
+      id: '/api/admin/analytics'
+      path: '/api/admin/analytics'
+      fullPath: '/api/admin/analytics'
+      preLoaderRoute: typeof ApiAdminAnalyticsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/pay/ironpay/status': {
@@ -463,7 +623,9 @@ const rootRouteChildren: RootRouteChildren = {
   ObrigadoRoute: ObrigadoRoute,
   OrigemRoute: OrigemRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminDashboardRoute: AdminDashboardRoute,
   AdminFinancasRoute: AdminFinancasRoute,
+  AdminFunilRoute: AdminFunilRoute,
   AdminLeadsRoute: AdminLeadsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
@@ -471,6 +633,12 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGeocodeRoute: ApiGeocodeRoute,
   ApiReverseRoute: ApiReverseRoute,
   AdminIndexRoute: AdminIndexRoute,
+  ApiAdminAnalyticsRoute: ApiAdminAnalyticsRoute,
+  ApiAdminDashboardRoute: ApiAdminDashboardRoute,
+  ApiAdminFinancasRoute: ApiAdminFinancasRoute,
+  ApiAdminFunilRoute: ApiAdminFunilRoute,
+  ApiAdminLeadsRoute: ApiAdminLeadsRoute,
+  ApiAdminVerifyRoute: ApiAdminVerifyRoute,
   ApiLeadsTrackRoute: ApiLeadsTrackRoute,
   ApiPublicAnalyticsRoute: ApiPublicAnalyticsRoute,
   ApiPayBeehivePaymentLinkRoute: ApiPayBeehivePaymentLinkRoute,

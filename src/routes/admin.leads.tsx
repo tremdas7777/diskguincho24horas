@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { getAdminLeadsNotPaid } from "@/lib/admin-leads.functions";
+import { getAdminPasswordFromStorage } from "@/lib/adminPassword";
 
 export const Route = createFileRoute("/admin/leads")({
   head: () => ({ meta: [{ title: "Admin · Leads — Disk Guincho" }] }),
@@ -69,17 +68,26 @@ function AdminLeadsPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      const pw = getAdminPasswordFromStorage();
+      if (!pw) {
         navigate({ to: "/admin/login" });
         return;
       }
       try {
         setErr(null);
         setLoading(true);
-        const list = (await getAdminLeadsNotPaid({
-          data: { fromIso, toIso, limit: 200 },
-        })) as any[];
+        const res = await fetch("/api/admin/leads", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-admin-password": pw },
+          body: JSON.stringify({ fromIso, toIso, limit: 200 }),
+        });
+        if (res.status === 401) {
+          navigate({ to: "/admin/login" });
+          return;
+        }
+        const data = (await res.json().catch(() => null)) as any;
+        if (!res.ok) throw new Error(data?.error ?? "Falha ao carregar");
+        const list = (data?.rows ?? []) as any[];
         if (!active) return;
         setRows(list ?? []);
       } catch (e: any) {

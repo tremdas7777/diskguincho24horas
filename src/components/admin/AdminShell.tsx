@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { supabase } from "@/integrations/supabase/client";
+import { clearAdminPasswordFromStorage } from "@/lib/adminPassword";
 
 export function AdminShell({
   title,
@@ -9,17 +9,19 @@ export function AdminShell({
 }: {
   title: string;
   subtitle?: string;
-  active: "settings" | "leads" | "financas" | "analytics";
+  active: "dashboard" | "funil" | "settings" | "leads" | "financas" | "analytics";
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
 
   async function onLogout() {
-    await supabase.auth.signOut();
+    clearAdminPasswordFromStorage();
     navigate({ to: "/admin/login" });
   }
 
   const tabs: Array<{ id: typeof active; label: string; to: string }> = [
+    { id: "dashboard", label: "Dashboard", to: "/admin/dashboard" },
+    { id: "funil", label: "Funil", to: "/admin/funil" },
     { id: "leads", label: "Leads", to: "/admin/leads" },
     { id: "financas", label: "Finanças", to: "/admin/financas" },
     { id: "analytics", label: "Pixel/Ads", to: "/admin/analytics" },

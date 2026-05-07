@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { setAdminPasswordInStorage, getAdminPasswordFromStorage } from "@/lib/adminPassword";
 
 export const Route = createFileRoute("/admin/login")({
   head: () => ({ meta: [{ title: "Admin · Login — Disk Guincho" }] }),
@@ -9,41 +9,32 @@ export const Route = createFileRoute("/admin/login")({
 
 function AdminLoginPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/admin/settings" });
-    });
+    const saved = getAdminPasswordFromStorage();
+    if (saved) navigate({ to: "/admin/leads" });
   }, [navigate]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setErr(null);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const res = await fetch("/api/admin/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ password }),
+    });
+    const data = (await res.json().catch(() => null)) as any;
     setBusy(false);
-    if (error) {
-      setErr(error.message);
+    if (!res.ok || !data?.ok) {
+      setErr("Senha inválida.");
       return;
     }
-    navigate({ to: "/admin/settings" });
-  }
-
-  async function onSignUp() {
-    setBusy(true);
-    setErr(null);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { emailRedirectTo: window.location.origin + "/admin/settings" },
-    });
-    setBusy(false);
-    if (error) setErr(error.message);
-    else setErr("Conta criada. Verifique seu e-mail para confirmar (se exigido).");
+    setAdminPasswordInStorage(password);
+    navigate({ to: "/admin/leads" });
   }
 
   return (
@@ -51,20 +42,9 @@ function AdminLoginPage() {
       <div className="mx-auto w-full max-w-md rounded-3xl border border-[color:var(--color-border)] bg-[color:var(--color-panel)]/90 p-6 shadow-soft">
         <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">Admin</div>
         <h1 className="mt-1 text-xl font-semibold">Entrar no painel</h1>
-        <p className="mt-2 text-sm text-[color:var(--color-muted)]">Use seu e-mail e senha de administrador.</p>
+        <p className="mt-2 text-sm text-[color:var(--color-muted)]">Digite a senha do painel.</p>
 
         <form onSubmit={onSubmit} className="mt-6 grid gap-3">
-          <label className="grid gap-1">
-            <div className="text-sm font-semibold">E-mail</div>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-12 rounded-2xl border border-white/20 bg-black/55 px-4 outline-none placeholder:text-white/55"
-              placeholder="admin@empresa.com"
-            />
-          </label>
           <label className="grid gap-1">
             <div className="text-sm font-semibold">Senha</div>
             <input
@@ -87,14 +67,6 @@ function AdminLoginPage() {
             className="h-12 rounded-2xl bg-[color:var(--brand)] text-base font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-60"
           >
             {busy ? "Entrando…" : "Entrar"}
-          </button>
-          <button
-            type="button"
-            onClick={onSignUp}
-            disabled={busy || !email || !password}
-            className="h-10 rounded-2xl border border-[color:var(--color-border)] bg-black/20 text-sm hover:bg-white/5 disabled:opacity-60"
-          >
-            Criar conta de admin
           </button>
         </form>
 

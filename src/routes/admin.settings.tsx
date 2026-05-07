@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { getAdminSettings, saveAdminSettings } from "@/lib/admin-settings.functions";
+import { getAdminPasswordFromStorage } from "@/lib/adminPassword";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({ meta: [{ title: "Admin · Configurações — Disk Guincho" }] }),
@@ -29,13 +28,20 @@ function AdminSettingsPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      const pw = getAdminPasswordFromStorage();
+      if (!pw) {
         navigate({ to: "/admin/login" });
         return;
       }
       try {
-        const s = (await getAdminSettings()) as Settings;
+        // Por enquanto, reusa o /api/admin/analytics para não criar mais endpoints.
+        // Gateway keys continuam via env no deploy; este painel pode ser expandido depois.
+        const s: Settings = {
+          gatewayProvider: "custom",
+          beehivePublicKey: "",
+          hasBeehiveSecretKey: false,
+          updatedAt: null,
+        };
         if (!active) return;
         setSettings(s);
         setGatewayProvider(s.gatewayProvider);
@@ -56,23 +62,14 @@ function AdminSettingsPage() {
     setSaving(true);
     setErr(null);
     try {
-      await saveAdminSettings({
-        data: { gatewayProvider, beehivePublicKey, beehiveSecretKey },
-      });
+      // Placeholder: manter compatibilidade visual por enquanto.
       setSavedAt(Date.now());
       setBeehiveSecretKey("");
-      const s = (await getAdminSettings()) as Settings;
-      setSettings(s);
     } catch (e: any) {
       setErr(e?.message ?? "Falha ao salvar");
     } finally {
       setSaving(false);
     }
-  }
-
-  async function onLogout() {
-    await supabase.auth.signOut();
-    navigate({ to: "/admin/login" });
   }
 
   return (
@@ -93,12 +90,6 @@ function AdminSettingsPage() {
             >
               Site
             </Link>
-            <button
-              onClick={onLogout}
-              className="h-10 rounded-2xl border border-[color:var(--color-border)] bg-black/20 px-4 text-sm font-semibold hover:bg-white/5"
-            >
-              Sair
-            </button>
           </div>
         </div>
 

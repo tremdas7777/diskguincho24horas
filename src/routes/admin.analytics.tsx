@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { AdminShell } from "@/components/admin/AdminShell";
-import { getAdminAnalytics, saveAdminAnalytics } from "@/lib/admin-analytics.functions";
+import { getAdminPasswordFromStorage } from "@/lib/adminPassword";
 
 export const Route = createFileRoute("/admin/analytics")({
   head: () => ({ meta: [{ title: "Admin · Pixel/Ads — Disk Guincho" }] }),
@@ -26,13 +25,22 @@ function AdminAnalyticsPage() {
   useEffect(() => {
     let active = true;
     (async () => {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
+      const pw = getAdminPasswordFromStorage();
+      if (!pw) {
         navigate({ to: "/admin/login" });
         return;
       }
       try {
-        const s = (await getAdminAnalytics()) as any;
+        const res = await fetch("/api/admin/analytics", {
+          method: "GET",
+          headers: { "x-admin-password": pw },
+        });
+        if (res.status === 401) {
+          navigate({ to: "/admin/login" });
+          return;
+        }
+        const s = (await res.json().catch(() => null)) as any;
+        if (!res.ok) throw new Error(s?.error ?? "Falha ao carregar");
         if (!active) return;
         setUtmTrackingEnabled(Boolean(s.utmTrackingEnabled));
         setGoogleAdsEnabled(Boolean(s.googleAdsEnabled));
@@ -58,16 +66,25 @@ function AdminAnalyticsPage() {
     setSavedAt(null);
     setErr(null);
     try {
-      await saveAdminAnalytics({
-        data: {
+      const pw = getAdminPasswordFromStorage();
+      if (!pw) {
+        navigate({ to: "/admin/login" });
+        return;
+      }
+      const res = await fetch("/api/admin/analytics", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-admin-password": pw },
+        body: JSON.stringify({
           utmTrackingEnabled,
           googleAdsEnabled,
           googleAdsConversionId,
           googleAdsConversionLabel,
           metaPixelEnabled,
           metaPixelId,
-        },
+        }),
       });
+      const data = (await res.json().catch(() => null)) as any;
+      if (!res.ok) throw new Error(data?.error ?? "Falha ao salvar");
       setSavedAt(Date.now());
     } catch (e: any) {
       setErr(e?.message ?? "Falha ao salvar");
