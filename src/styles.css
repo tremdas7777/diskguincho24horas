@@ -1,6 +1,7 @@
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
+@import "leaflet/dist/leaflet.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -142,3 +143,68 @@
     color: var(--color-foreground);
   }
 }
+
+/* ====== Disk Guincho semantic tokens & utilities ====== */
+@theme inline {
+  --color-bg: #0b0f17;
+  --color-panel: #131a26;
+  --color-text: #e8eefc;
+  --color-muted: #94a3b8;
+  --color-border: rgba(255,255,255,0.10);
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html, body { height: 100%; }
+
+body.app-bg-root,
+.app-bg {
+  background:
+    radial-gradient(800px 400px at 10% 0%, rgba(245, 158, 11, 0.18), transparent),
+    radial-gradient(900px 500px at 90% 10%, rgba(245, 158, 11, 0.08), transparent),
+    linear-gradient(to bottom, rgba(255,255,255,0.04), transparent 240px),
+    repeating-linear-gradient(
+      90deg,
+      rgba(255,255,255,0.035) 0,
+      rgba(255,255,255,0.035) 1px,
+      transparent 1px,
+      transparent 64px
+    );
+  background-color: #0b0f17;
+  color: #e8eefc;
+}
+
+@keyframes gpsPulse {
+  0%   { transform: translate(-50%, -50%) scale(0.9); opacity: 0.75; }
+  70%  { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+.gps-dot { position: relative; width: 18px; height: 18px; }
+.gps-dot::before {
+  content: "";
+  position: absolute; inset: 0;
+  border-radius: 999px;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(11, 15, 23, 0.8), 0 12px 30px rgba(245, 158, 11, 0.25);
+}
+.gps-dot::after {
+  content: "";
+  position: absolute; left: 50%; top: 50%;
+  width: 18px; height: 18px; border-radius: 999px;
+  background: rgba(245, 158, 11, 0.35);
+  animation: gpsPulse 1.35s infinite;
+}
+
+.leaflet-pane { z-index: 0; }
+.leaflet-top, .leaflet-bottom { z-index: 10; }
+
+@keyframes guincho-search {
+  0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }
+  45%      { transform: translateY(-8px) scale(1.06); filter: brightness(1.08); }
+  55%      { transform: translateY(-8px) scale(1.06); }
+}
+.animate-guincho-search { animation: guincho-search 1.15s ease-in-out infinite; }
+
+.shadow-soft { box-shadow: 0 30px 80px rgba(0,0,0,0.45); }
