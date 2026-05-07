@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export const Route = createFileRoute("/api/pay/ironpay/status")({
   server: {
@@ -16,6 +17,33 @@ export const Route = createFileRoute("/api/pay/ironpay/status")({
         }
         if (!apiToken) {
           return Response.json({ error: "Missing IRONPAY_API_TOKEN" }, { status: 500 });
+        }
+
+        // 1) First check our DB (postback-updated), more reliable than polling IronPay.
+        try {
+          const { data } = await supabaseAdmin
+            .from("leads")
+            .select("pix_status, paid_at")
+            .eq("pix_transaction_hash", transactionHash)
+            .maybeSingle();
+          const st = String(data?.pix_status ?? "").toLowerCase();
+          if (st) {
+            const paid = st === "paid";
+            const pending = !paid;
+            return Response.json(
+              {
+                transactionHash,
+                status: st,
+                paid,
+                pending,
+                source: "db",
+                paidAt: data?.paid_at ?? null,
+              },
+              { status: 200 },
+            );
+          }
+        } catch {
+          // ignore and fall back to IronPay polling
         }
 
         const base = "https://api.ironpayapp.com.br/api/public/v1";

@@ -41,7 +41,8 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         const body = (await request.json()) as Partial<Body>;
         const title = (body.title ?? "").trim();
         const amountCents = Number(body.amountCents);
-        if (!title || !Number.isFinite(amountCents) || amountCents < 100) {
+        // IronPay exige mínimo de R$ 5,00 (500 centavos)
+        if (!title || !Number.isFinite(amountCents) || amountCents < 500) {
           return Response.json({ error: "Invalid payload" }, { status: 400 });
         }
 
@@ -51,20 +52,57 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         // Doc: autenticação via parâmetro api_token
         url.searchParams.set("api_token", apiToken);
 
-        // Obs: a documentação pública é um SPA; para reduzir risco de campo errado,
-        // enviamos um payload compatível com integrações comuns (offer_hash + pix + amount).
+        // A IronPay costuma exigir cart/customer e campos como product_hash/operation_type.
         const payload: Record<string, unknown> = {
+          // compat: algumas contas usam product_hash em vez de offer_hash
           offer_hash: offerHash,
+          product_hash: offerHash,
+          operation_type: "sale",
           payment_method: "pix",
           amount: Math.round(amountCents),
           title,
+          name: title,
+          cart: [
+            {
+              offer_hash: offerHash,
+              product_hash: offerHash,
+              quantity: 1,
+              price: Math.round(amountCents),
+            },
+          ],
+          customer: {
+            name: "Cliente Disk Guincho",
+            email: "cliente@diskguincho.com.br",
+          },
         };
         if (postbackUrl) payload.postback_url = postbackUrl;
 
+        // IMPORTANT: A IronPay pode não aceitar JSON corretamente; enviar como form-urlencoded.
+        const form = new URLSearchParams();
+        for (const [k, v] of Object.entries(payload)) {
+          if (v == null) continue;
+          // nested objects/arrays handled below
+          if (typeof v === "object") continue;
+          form.set(k, String(v));
+        }
+        // cart[0][...]
+        const cart0 = (payload.cart as any)?.[0] ?? {};
+        form.set("cart[0][offer_hash]", String(cart0.offer_hash ?? offerHash));
+        if (cart0.product_hash) form.set("cart[0][product_hash]", String(cart0.product_hash));
+        form.set("cart[0][quantity]", String(cart0.quantity ?? 1));
+        form.set("cart[0][price]", String(cart0.price ?? Math.round(amountCents)));
+        // customer[...]
+        const cust = (payload.customer as any) ?? {};
+        form.set("customer[name]", String(cust.name ?? "Cliente"));
+        form.set("customer[email]", String(cust.email ?? "cliente@diskguincho.com.br"));
+
         const res = await fetch(url.toString(), {
           method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Accept: "application/json",
+          },
+          body: form.toString(),
         });
 
         const json = await res.json().catch(() => null);

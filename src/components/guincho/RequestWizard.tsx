@@ -1009,12 +1009,11 @@ export function RequestWizard() {
       });
       const data = (await res.json()) as any;
       if (!res.ok) {
-        // Sem travas: se o gateway falhar/não estiver configurado, abre Pix demo.
-        const demo = `pix-demo:${Date.now()}`;
-        setPixUrl(demo);
-        setPixCopy(demo);
-        setPixTransactionHash("");
-        setPixOpen(true);
+        setErr(
+          data?.details?.message
+            ? `Erro ao gerar Pix (IronPay): ${String(data.details.message)}`
+            : "Erro ao gerar Pix (IronPay). Verifique as configurações.",
+        );
         return;
       }
       if (data?.url) {
@@ -1033,12 +1032,7 @@ export function RequestWizard() {
         setPixOpen(true);
       } else setErr("Link de pagamento inválido.");
     } catch {
-      // Sem travas: em erro geral, abre Pix demo.
-      const demo = `pix-demo:${Date.now()}`;
-      setPixUrl(demo);
-      setPixCopy(demo);
-      setPixTransactionHash("");
-      setPixOpen(true);
+      setErr("Erro ao gerar Pix (IronPay). Tente novamente.");
     } finally {
       setBusy(null);
     }

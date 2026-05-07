@@ -35,6 +35,7 @@ import { Route as ApiAdminDashboardRouteImport } from './routes/api/admin/dashbo
 import { Route as ApiAdminAnalyticsRouteImport } from './routes/api/admin/analytics'
 import { Route as ApiPayIronpayStatusRouteImport } from './routes/api/pay/ironpay/status'
 import { Route as ApiPayIronpayProofRouteImport } from './routes/api/pay/ironpay/proof'
+import { Route as ApiPayIronpayPostbackRouteImport } from './routes/api/pay/ironpay/postback'
 import { Route as ApiPayIronpayPixLinkRouteImport } from './routes/api/pay/ironpay/pix-link'
 import { Route as ApiPayBeehivePixLinkRouteImport } from './routes/api/pay/beehive/pix-link'
 import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/beehive/payment-link'
@@ -169,6 +170,11 @@ const ApiPayIronpayProofRoute = ApiPayIronpayProofRouteImport.update({
   path: '/api/pay/ironpay/proof',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPayIronpayPostbackRoute = ApiPayIronpayPostbackRouteImport.update({
+  id: '/api/pay/ironpay/postback',
+  path: '/api/pay/ironpay/postback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPayIronpayPixLinkRoute = ApiPayIronpayPixLinkRouteImport.update({
   id: '/api/pay/ironpay/pix-link',
   path: '/api/pay/ironpay/pix-link',
@@ -214,6 +220,7 @@ export interface FileRoutesByFullPath {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/postback': typeof ApiPayIronpayPostbackRoute
   '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
   '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
@@ -245,6 +252,7 @@ export interface FileRoutesByTo {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/postback': typeof ApiPayIronpayPostbackRoute
   '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
   '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
@@ -277,6 +285,7 @@ export interface FileRoutesById {
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
   '/api/pay/ironpay/pix-link': typeof ApiPayIronpayPixLinkRoute
+  '/api/pay/ironpay/postback': typeof ApiPayIronpayPostbackRoute
   '/api/pay/ironpay/proof': typeof ApiPayIronpayProofRoute
   '/api/pay/ironpay/status': typeof ApiPayIronpayStatusRoute
 }
@@ -310,6 +319,7 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/postback'
     | '/api/pay/ironpay/proof'
     | '/api/pay/ironpay/status'
   fileRoutesByTo: FileRoutesByTo
@@ -341,6 +351,7 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/postback'
     | '/api/pay/ironpay/proof'
     | '/api/pay/ironpay/status'
   id:
@@ -372,6 +383,7 @@ export interface FileRouteTypes {
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
     | '/api/pay/ironpay/pix-link'
+    | '/api/pay/ironpay/postback'
     | '/api/pay/ironpay/proof'
     | '/api/pay/ironpay/status'
   fileRoutesById: FileRoutesById
@@ -404,6 +416,7 @@ export interface RootRouteChildren {
   ApiPayBeehivePaymentLinkRoute: typeof ApiPayBeehivePaymentLinkRoute
   ApiPayBeehivePixLinkRoute: typeof ApiPayBeehivePixLinkRoute
   ApiPayIronpayPixLinkRoute: typeof ApiPayIronpayPixLinkRoute
+  ApiPayIronpayPostbackRoute: typeof ApiPayIronpayPostbackRoute
   ApiPayIronpayProofRoute: typeof ApiPayIronpayProofRoute
   ApiPayIronpayStatusRoute: typeof ApiPayIronpayStatusRoute
 }
@@ -592,6 +605,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPayIronpayProofRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/pay/ironpay/postback': {
+      id: '/api/pay/ironpay/postback'
+      path: '/api/pay/ironpay/postback'
+      fullPath: '/api/pay/ironpay/postback'
+      preLoaderRoute: typeof ApiPayIronpayPostbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pay/ironpay/pix-link': {
       id: '/api/pay/ironpay/pix-link'
       path: '/api/pay/ironpay/pix-link'
@@ -644,6 +664,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPayBeehivePaymentLinkRoute: ApiPayBeehivePaymentLinkRoute,
   ApiPayBeehivePixLinkRoute: ApiPayBeehivePixLinkRoute,
   ApiPayIronpayPixLinkRoute: ApiPayIronpayPixLinkRoute,
+  ApiPayIronpayPostbackRoute: ApiPayIronpayPostbackRoute,
   ApiPayIronpayProofRoute: ApiPayIronpayProofRoute,
   ApiPayIronpayStatusRoute: ApiPayIronpayStatusRoute,
 }
