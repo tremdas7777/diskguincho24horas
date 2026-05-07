@@ -1,4 +1,4 @@
-import { ClientOnly } from "@tanstack/react-router";
+import { ClientOnly, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { haversineKm, type LatLng } from "@/lib/guincho/geo";
 import { maskCEP, maskPhoneBR, onlyDigits } from "@/lib/guincho/masks";
@@ -40,6 +40,32 @@ type Address = {
   ref: string;
   coords?: LatLng;
 };
+
+const ORIGIN_STORAGE_KEY = "dg_origin_v1";
+
+function safeParseJson<T>(raw: string | null): T | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function isLikelyAddress(v: unknown): v is Address {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return (
+    typeof o.cep === "string" &&
+    typeof o.street === "string" &&
+    typeof o.number === "string" &&
+    typeof o.neighborhood === "string" &&
+    typeof o.city === "string" &&
+    typeof o.state === "string" &&
+    typeof o.complement === "string" &&
+    typeof o.ref === "string"
+  );
+}
 
 const VEHICLES: Array<{ id: VehicleType; label: string; desc: string }> = [
   { id: "carro", label: "Carro", desc: "Passeio / hatch / sedã" },
@@ -245,7 +271,16 @@ const blankAddress = (): Address => ({
 });
 
 export function RequestWizard() {
-  const [step, setStep] = useState(0); // 0..5
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isDestinoPage = pathname === "/destino" || pathname.startsWith("/destino/");
+  const [step, setStep] = useState(() => (isDestinoPage ? 1 : 0)); // 0..5
+
+  useEffect(() => {
+    if (isDestinoPage) setStep((s) => (s === 0 ? 1 : s));
+    else setStep((s) => (s >= 1 ? 0 : s));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isDestinoPage]);
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -272,6 +307,21 @@ export function RequestWizard() {
 
   // Fluxo em 2 etapas: só mostra destino após avançar explicitamente.
   const canShowDestinationUi = step >= 1;
+
+  // Quando entrar na página (origem), carrega origem salva.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = safeParseJson<unknown>(window.localStorage.getItem(ORIGIN_STORAGE_KEY));
+    if (isLikelyAddress(saved)) {
+      setOrigin((o) => ({ ...o, ...saved, coords: (saved as Address).coords }));
+    }
+  }, []);
+
+  // Salva origem conforme usuário define (para usar na página /destino).
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(ORIGIN_STORAGE_KEY, JSON.stringify(origin));
+  }, [origin]);
   const sheetMaxHClass =
     step === 1
       ? "max-h-[min(70vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-12rem))]"
@@ -1013,37 +1063,39 @@ export function RequestWizard() {
           </div>
 
           <div className="mt-2.5 grid gap-2 sm:mt-3">
-            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:flex-row sm:items-center">
-              <div className="flex min-w-0 items-start gap-2 sm:items-center">
-              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-[color:var(--brand)] sm:mt-0" />
-              <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
-                {origin.coords
-                  ? originLabel
-                    ? `Origem: ${originLabel}${gpsPrecisionHint}`
-                    : `Origem por GPS${gpsPrecisionHint}`
-                  : origin.street || origin.cep
-                    ? `Origem: ${buildAddressLine(origin) || origin.cep}`
-                    : "Use sua localização para definir o ponto exato no mapa"}
+            {!isDestinoPage ? (
+              <div className="flex flex-col gap-1 rounded-2xl border border-border bg-panel/90 px-2.5 py-1 sm:gap-2 sm:px-3 sm:py-2 sm:flex-row sm:items-center">
+                <div className="flex min-w-0 items-start gap-1.5 sm:items-center sm:gap-2">
+                  <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[color:var(--brand)] sm:mt-0 sm:h-2.5 sm:w-2.5" />
+                  <div className="min-w-0 flex-1 text-[11px] leading-snug text-muted line-clamp-1 sm:text-sm sm:line-clamp-2">
+                    {origin.coords
+                      ? originLabel
+                        ? `Origem: ${originLabel}${gpsPrecisionHint}`
+                        : `Origem por GPS${gpsPrecisionHint}`
+                      : origin.street || origin.cep
+                        ? `Origem: ${buildAddressLine(origin) || origin.cep}`
+                        : "Use sua localização para definir o ponto exato no mapa"}
+                  </div>
+                </div>
+                <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={useGPS}
+                    className="min-h-9 w-full rounded-xl bg-[color:var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] sm:w-auto"
+                  >
+                    {origin.coords ? "Atualizar localização" : "Usar minha localização"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setStep(0)}
+                    className="min-h-9 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
+                    title="Informar CEP ou endereço manualmente"
+                  >
+                    Digitar endereço
+                  </button>
+                </div>
               </div>
-              </div>
-              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-              <button
-                type="button"
-                onClick={useGPS}
-                className="min-h-9 w-full rounded-xl bg-[color:var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] sm:w-auto"
-              >
-                {origin.coords ? "Atualizar localização" : "Usar minha localização"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(0)}
-                className="min-h-9 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
-                title="Informar CEP ou endereço manualmente"
-              >
-                Digitar endereço
-              </button>
-              </div>
-            </div>
+            ) : null}
 
             {canShowDestinationUi ? (
               <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
@@ -1057,30 +1109,16 @@ export function RequestWizard() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setStep(1)}
+                  onClick={() => {
+                    void navigate({ to: "/destino" });
+                  }}
                   className="min-h-10 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
                   title="Escolher destino"
                 >
                   Destino
                 </button>
               </div>
-            ) : (
-              <div className="grid gap-2 rounded-2xl border border-border/70 bg-panel/50 px-3 py-2">
-                <div className="text-xs text-muted">
-                  1) Defina sua <span className="text-text font-semibold">origem</span>. 2) Toque em{" "}
-                  <span className="text-text font-semibold">Avançar</span> para escolher o destino.
-                </div>
-                <button
-                  type="button"
-                  disabled={!originReady}
-                  onClick={() => setStep(1)}
-                  className="min-h-10 w-full rounded-xl bg-[color:var(--brand)] px-4 py-2 text-xs font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-40"
-                  title={originReady ? "Avançar para destino" : "Defina a origem primeiro"}
-                >
-                  Avançar para destino
-                </button>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
@@ -1141,7 +1179,7 @@ export function RequestWizard() {
           </div>
 
           {/* On small screens, prevent the sheet from colliding with the top bar */}
-          <div className={`${sheetMaxHClass} overflow-y-auto overscroll-contain pr-1`}>
+          <div className={`${sheetMaxHClass} overflow-y-auto overscroll-contain pr-1 pb-1`}>
             <div className="grid gap-3">
         {step === 2 ? (
           <div className="grid gap-3">
@@ -1172,14 +1210,6 @@ export function RequestWizard() {
 
         {step === 0 ? (
           <div className="grid gap-4">
-            <button
-              type="button"
-              onClick={useGPS}
-              className="h-12 w-full rounded-xl bg-[color:var(--brand)] font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)]"
-            >
-              Usar minha localização
-            </button>
-
             <div className="grid grid-cols-2 gap-3">
               <Field label="CEP (origem)">
                 <Input
@@ -1244,20 +1274,6 @@ export function RequestWizard() {
                 }
               />
             </Field>
-
-            <button
-              type="button"
-              onClick={() => void geocodeAddress("origin")}
-              className="h-12 w-full rounded-xl border border-border bg-panel/90 font-semibold hover:bg-white/5"
-            >
-              Confirmar origem no mapa
-            </button>
-
-            {origin.coords ? (
-              <div className="rounded-2xl border border-border bg-panel/90 px-4 py-3 text-sm text-muted">
-                Origem confirmada no mapa.
-              </div>
-            ) : null}
 
             <div className="overflow-hidden rounded-2xl border border-border bg-panel/90">
               <div className="px-4 py-3 text-sm font-semibold text-muted">
@@ -1678,7 +1694,7 @@ export function RequestWizard() {
             </div>
           </div>
 
-          <div className="mt-4 flex items-center gap-3">
+          <div className="mt-2 flex items-center gap-2">
             <button
               type="button"
               onClick={back}
@@ -1713,8 +1729,7 @@ export function RequestWizard() {
                   return;
                 }
                 if (step === 0) {
-                  if (!originReady) return;
-                  setStep(1);
+                  void navigate({ to: "/destino" });
                   return;
                 }
                 if (step === 4) {
@@ -1749,7 +1764,7 @@ export function RequestWizard() {
             </button>
           </div>
 
-          <div className="mt-3 text-center text-xs text-muted">
+          <div className="mt-2 text-center text-[11px] text-muted">
             Dica: confirme origem e destino no mapa para o preço mudar pela distância.
           </div>
           </div>

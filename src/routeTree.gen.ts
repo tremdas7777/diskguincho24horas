@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as DestinoRouteImport } from './routes/destino'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiReverseRouteImport } from './routes/api/reverse'
@@ -19,6 +20,11 @@ import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPayBeehivePixLinkRouteImport } from './routes/api/pay/beehive/pix-link'
 import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/beehive/payment-link'
 
+const DestinoRoute = DestinoRouteImport.update({
+  id: '/destino',
+  path: '/destino',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -68,6 +74,7 @@ const ApiPayBeehivePaymentLinkRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/destino': typeof DestinoRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/destino': typeof DestinoRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -91,6 +99,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/destino': typeof DestinoRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
@@ -104,6 +113,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/destino'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/destino'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/destino'
     | '/admin/login'
     | '/admin/settings'
     | '/api/autocomplete'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  DestinoRoute: typeof DestinoRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   ApiAutocompleteRoute: typeof ApiAutocompleteRoute
@@ -150,6 +163,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/destino': {
+      id: '/destino'
+      path: '/destino'
+      fullPath: '/destino'
+      preLoaderRoute: typeof DestinoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -218,6 +238,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  DestinoRoute: DestinoRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   ApiAutocompleteRoute: ApiAutocompleteRoute,
