@@ -314,7 +314,7 @@ export function RequestWizard() {
   const [vehicle, setVehicle] = useState<VehicleType>("carro");
   const [origin, setOrigin] = useState<Address>(() => blankAddress());
   const [dest, setDest] = useState<Address>(() => blankAddress());
-  const [problem, setProblem] = useState<ProblemType>("pane_seca");
+  const [problem, setProblem] = useState<ProblemType>("guincho");
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
