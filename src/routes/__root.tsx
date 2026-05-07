@@ -7,6 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { AnalyticsProvider } from "@/components/AnalyticsProvider";
 
 import appCss from "../styles.css?url";
 
@@ -121,7 +122,9 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <AnalyticsProvider>
+        <Outlet />
+      </AnalyticsProvider>
     </QueryClientProvider>
   );
 }

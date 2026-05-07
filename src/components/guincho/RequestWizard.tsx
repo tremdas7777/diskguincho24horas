@@ -4,6 +4,16 @@ import { haversineKm, type LatLng } from "@/lib/guincho/geo";
 import { maskCEP, maskPhoneBR, onlyDigits } from "@/lib/guincho/masks";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { PixModal } from "./PixModal";
+const LEAD_STORAGE_KEY = "diskguincho_lead_key_v1";
+
+function getOrCreateLeadKey() {
+  if (typeof window === "undefined") return "";
+  const existing = window.localStorage.getItem(LEAD_STORAGE_KEY);
+  if (existing && existing.length >= 8) return existing;
+  const k = `lead_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  window.localStorage.setItem(LEAD_STORAGE_KEY, k);
+  return k;
+}
 import { MapPanel as RawMapPanel } from "./MapPanel";
 
 function MapPanel(props: React.ComponentProps<typeof RawMapPanel>) {
@@ -285,6 +295,22 @@ export function RequestWizard() {
   const [busy, setBusy] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  const leadKey = useMemo(() => getOrCreateLeadKey(), []);
+
+  async function trackLead(payload: Record<string, unknown>) {
+    if (!leadKey) return;
+    try {
+      await fetch("/api/leads/track", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leadKey, ...payload }),
+        keepalive: true,
+      });
+    } catch {
+      // ignore
+    }
+  }
+
   const [vehicle, setVehicle] = useState<VehicleType>("carro");
   const [origin, setOrigin] = useState<Address>(() => blankAddress());
   const [dest, setDest] = useState<Address>(() => blankAddress());
@@ -317,6 +343,46 @@ export function RequestWizard() {
       setOrigin((o) => ({ ...o, ...saved, coords: (saved as Address).coords }));
     }
   }, []);
+
+  // Primeiro evento do funil + UTM
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const sp = new URLSearchParams(window.location.search);
+    const utm = {
+      source: sp.get("utm_source") ?? "",
+      medium: sp.get("utm_medium") ?? "",
+      campaign: sp.get("utm_campaign") ?? "",
+      term: sp.get("utm_term") ?? "",
+      content: sp.get("utm_content") ?? "",
+    };
+    void trackLead({ currentStep: step, utm });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Atualiza “tempo tentando” conforme navega/edita
+  useEffect(() => {
+    void trackLead({ currentStep: step });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Salva telefone/nome quando usuário digita (debounce)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const t = window.setTimeout(() => {
+      if (name.trim() || phone.trim()) {
+        void trackLead({
+          name,
+          phone,
+          originCity: origin.city ?? "",
+          originState: origin.state ?? "",
+          destCity: dest.city ?? "",
+          destState: dest.state ?? "",
+        });
+      }
+    }, 700);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [name, phone]);
 
   // Salva origem conforme usuário define (para usar na página /destino).
   useEffect(() => {
@@ -873,6 +939,31 @@ export function RequestWizard() {
     ]);
   }, [step, paymentDone, chatMessages.length]);
 
+  // Dispara conversão Google Ads quando Pix é pago
+  useEffect(() => {
+    if (!paymentDone) return;
+    if (typeof window === "undefined") return;
+    const cfg = (window as any).__diskGuinchoAnalytics as
+      | {
+          googleAdsEnabled?: boolean;
+          googleAdsConversionId?: string;
+          googleAdsConversionLabel?: string;
+        }
+      | undefined;
+    if (!cfg?.googleAdsEnabled) return;
+    const id = String(cfg.googleAdsConversionId ?? "").trim();
+    const label = String(cfg.googleAdsConversionLabel ?? "").trim();
+    if (!id || !label) return;
+    if (typeof (window as any).gtag !== "function") return;
+    try {
+      (window as any).gtag("event", "conversion", {
+        send_to: `${id}/${label}`,
+      });
+    } catch {
+      // ignore
+    }
+  }, [paymentDone]);
+
   function sendChat() {
     const msg = chatText.trim();
     if (!msg) return;
@@ -930,7 +1021,15 @@ export function RequestWizard() {
         setPixUrl(String(data.url));
         // fallback: copy is the same URL if Beehive doesn't expose the Pix payload here
         setPixCopy(String(data.url));
-        setPixTransactionHash(String(data.transactionHash ?? ""));
+        const tx = String(data.transactionHash ?? "");
+        setPixTransactionHash(tx);
+        void trackLead({
+          pix: {
+            transactionHash: tx,
+            status: "created",
+            amountCents: Math.round(amount * 100),
+          },
+        });
         setPixOpen(true);
       } else setErr("Link de pagamento inválido.");
     } catch {
@@ -967,6 +1066,13 @@ export function RequestWizard() {
         if (res.ok && data?.paid) {
           setPaymentDone(true);
           setPixOpen(false);
+          void trackLead({
+            pix: {
+              transactionHash: pixTransactionHash,
+              status: "paid",
+              paidAt: new Date().toISOString(),
+            },
+          });
           setStep(5);
           return;
         }
