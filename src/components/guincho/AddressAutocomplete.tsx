@@ -1,8 +1,7 @@
-"use client";
 
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LatLng } from "./geo";
+import type { LatLng } from "@/lib/guincho/geo";
 
 type Suggestion = {
   id: string;

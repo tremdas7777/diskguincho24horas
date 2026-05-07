@@ -1,10 +1,9 @@
-"use client";
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { haversineKm, type LatLng } from "./geo";
-import { maskCEP, maskPhoneBR, onlyDigits } from "./masks";
+import { haversineKm, type LatLng } from "@/lib/guincho/geo";
+import { maskCEP, maskPhoneBR, onlyDigits } from "@/lib/guincho/masks";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { PixModal } from "./PixModal";
 

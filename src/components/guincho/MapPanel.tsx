@@ -1,4 +1,3 @@
-"use client";
 
 import { useEffect, useMemo, useRef } from "react";
 import {
@@ -11,7 +10,7 @@ import {
   useMap,
 } from "react-leaflet";
 import L from "leaflet";
-import type { LatLng } from "./geo";
+import type { LatLng } from "@/lib/guincho/geo";
 
 function Follow({
   center,
