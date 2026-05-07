@@ -4,7 +4,15 @@ import { haversineKm, type LatLng } from "@/lib/guincho/geo";
 import { maskCEP, maskPhoneBR, onlyDigits } from "@/lib/guincho/masks";
 import { AddressAutocomplete } from "./AddressAutocomplete";
 import { PixModal } from "./PixModal";
-import { MapPanel } from "./MapPanel";
+import { MapPanel as RawMapPanel } from "./MapPanel";
+
+function MapPanel(props: React.ComponentProps<typeof RawMapPanel>) {
+  return (
+    <ClientOnly fallback={<div className={props.className} />}>
+      <RawMapPanel {...props} />
+    </ClientOnly>
+  );
+}
 
 type VehicleType =
   | "carro"
