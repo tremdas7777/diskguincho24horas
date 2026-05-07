@@ -10,15 +10,23 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiReverseRouteImport } from './routes/api/reverse'
 import { Route as ApiGeocodeRouteImport } from './routes/api/geocode'
 import { Route as ApiAutocompleteRouteImport } from './routes/api/autocomplete'
+import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
+import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as ApiPayBeehivePixLinkRouteImport } from './routes/api/pay/beehive/pix-link'
 import { Route as ApiPayBeehivePaymentLinkRouteImport } from './routes/api/pay/beehive/payment-link'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiReverseRoute = ApiReverseRouteImport.update({
@@ -36,6 +44,16 @@ const ApiAutocompleteRoute = ApiAutocompleteRouteImport.update({
   path: '/api/autocomplete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminSettingsRoute = AdminSettingsRouteImport.update({
+  id: '/admin/settings',
+  path: '/admin/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminLoginRoute = AdminLoginRouteImport.update({
+  id: '/admin/login',
+  path: '/admin/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPayBeehivePixLinkRoute = ApiPayBeehivePixLinkRouteImport.update({
   id: '/api/pay/beehive/pix-link',
   path: '/api/pay/beehive/pix-link',
@@ -50,26 +68,35 @@ const ApiPayBeehivePaymentLinkRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
+  '/admin': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin/login': typeof AdminLoginRoute
+  '/admin/settings': typeof AdminSettingsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
+  '/admin/': typeof AdminIndexRoute
   '/api/pay/beehive/payment-link': typeof ApiPayBeehivePaymentLinkRoute
   '/api/pay/beehive/pix-link': typeof ApiPayBeehivePixLinkRoute
 }
@@ -77,34 +104,46 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin/login'
+    | '/admin/settings'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
+    | '/admin/'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/admin/login'
+    | '/admin/settings'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
+    | '/admin'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
   id:
     | '__root__'
     | '/'
+    | '/admin/login'
+    | '/admin/settings'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
+    | '/admin/'
     | '/api/pay/beehive/payment-link'
     | '/api/pay/beehive/pix-link'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminLoginRoute: typeof AdminLoginRoute
+  AdminSettingsRoute: typeof AdminSettingsRoute
   ApiAutocompleteRoute: typeof ApiAutocompleteRoute
   ApiGeocodeRoute: typeof ApiGeocodeRoute
   ApiReverseRoute: typeof ApiReverseRoute
+  AdminIndexRoute: typeof AdminIndexRoute
   ApiPayBeehivePaymentLinkRoute: typeof ApiPayBeehivePaymentLinkRoute
   ApiPayBeehivePixLinkRoute: typeof ApiPayBeehivePixLinkRoute
 }
@@ -116,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/reverse': {
@@ -139,6 +185,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutocompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/settings': {
+      id: '/admin/settings'
+      path: '/admin/settings'
+      fullPath: '/admin/settings'
+      preLoaderRoute: typeof AdminSettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/login': {
+      id: '/admin/login'
+      path: '/admin/login'
+      fullPath: '/admin/login'
+      preLoaderRoute: typeof AdminLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/pay/beehive/pix-link': {
       id: '/api/pay/beehive/pix-link'
       path: '/api/pay/beehive/pix-link'
@@ -158,12 +218,25 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminLoginRoute: AdminLoginRoute,
+  AdminSettingsRoute: AdminSettingsRoute,
   ApiAutocompleteRoute: ApiAutocompleteRoute,
   ApiGeocodeRoute: ApiGeocodeRoute,
   ApiReverseRoute: ApiReverseRoute,
+  AdminIndexRoute: AdminIndexRoute,
   ApiPayBeehivePaymentLinkRoute: ApiPayBeehivePaymentLinkRoute,
   ApiPayBeehivePixLinkRoute: ApiPayBeehivePixLinkRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
