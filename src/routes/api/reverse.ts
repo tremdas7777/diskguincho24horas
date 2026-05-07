@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { partsFromNominatimAddress } from "@/lib/guincho/nominatimParts";
 
 export const Route = createFileRoute("/api/reverse")({
   server: {
@@ -20,15 +21,16 @@ export const Route = createFileRoute("/api/reverse")({
         if (!res.ok) return Response.json({ error: `Reverse failed (${res.status})` }, { status: 502 });
         const data = (await res.json()) as any;
         const a = data?.address ?? {};
-        const line = [
-          a.road || a.pedestrian || a.cycleway || a.footway || "",
-          a.house_number ? `, ${a.house_number}` : "",
-        ].join("");
-        const city = a.city || a.town || a.village || a.municipality || "";
-        const state = a.state || "";
+        const stateName = String(a.state ?? "").trim();
+        const parts = partsFromNominatimAddress(a as Record<string, unknown>);
+        const line = [parts.street, parts.number ? `, ${parts.number}` : ""].join("");
+
         return Response.json({
           display_name: data?.display_name ?? "",
-          short: [line, city && state ? `${city} - ${state}` : city || state].filter(Boolean).join(" · "),
+          short: [line, parts.city && stateName ? `${parts.city} - ${stateName}` : parts.city || stateName]
+            .filter(Boolean)
+            .join(" · "),
+          parts,
         });
       },
     },

@@ -1,14 +1,15 @@
-
 import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { LatLng } from "@/lib/guincho/geo";
+import type { NominatimFormParts } from "@/lib/guincho/nominatimParts";
 
 type Suggestion = {
   id: string;
   label: string;
   lat: number;
   lng: number;
-  address?: any;
+  parts?: NominatimFormParts;
+  address?: unknown;
 };
 
 export function AddressAutocomplete({
@@ -22,7 +23,12 @@ export function AddressAutocomplete({
   value: string;
   onChange: (v: string) => void;
   bias?: LatLng;
-  onPick: (s: { label: string; coords: LatLng; address?: any }) => void;
+  onPick: (s: {
+    label: string;
+    coords: LatLng;
+    parts?: NominatimFormParts;
+    address?: unknown;
+  }) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -59,8 +65,8 @@ export function AddressAutocomplete({
           signal: ac.signal,
           cache: "no-store",
         });
-        const data = (await res.json()) as any;
-        setItems((data?.suggestions as Suggestion[]) ?? []);
+        const data = (await res.json()) as { suggestions?: Suggestion[] };
+        setItems(data?.suggestions ?? []);
         setOpen(true);
       } catch {
         // ignore
@@ -102,6 +108,19 @@ export function AddressAutocomplete({
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           className="h-8 w-full bg-transparent text-sm text-text outline-none placeholder:text-white/55"
+          onKeyDown={(e) => {
+            if (e.key !== "Enter") return;
+            e.preventDefault();
+            const first = items[0];
+            if (!first) return;
+            onPick({
+              label: first.label,
+              coords: { lat: first.lat, lng: first.lng },
+              parts: first.parts,
+              address: first.address,
+            });
+            setOpen(false);
+          }}
           onFocus={() => {
             setOpen(true);
             inputWrapRef.current?.scrollIntoView({ block: "center", behavior: "smooth" });
@@ -145,6 +164,7 @@ export function AddressAutocomplete({
                       onPick({
                         label: it.label,
                         coords: { lat: it.lat, lng: it.lng },
+                        parts: it.parts,
                         address: it.address,
                       });
                       setOpen(false);

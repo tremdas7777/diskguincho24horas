@@ -255,12 +255,16 @@ export function RequestWizard() {
   const [phone, setPhone] = useState("");
   const [notes, setNotes] = useState("");
 
-  const [followMe, setFollowMe] = useState(true);
   const [gpsAccuracyM, setGpsAccuracyM] = useState<number | undefined>(undefined);
   const gpsWatchIdRef = useRef<number | null>(null);
+  const originCoordsRef = useRef<LatLng | undefined>(undefined);
+  originCoordsRef.current = origin.coords ?? undefined;
   const [originLabel, setOriginLabel] = useState<string>("");
   const [destQuery, setDestQuery] = useState<string>("");
-  const sheetMaxHClass = step === 1 ? "max-h-[70vh]" : "max-h-[52vh]";
+  const sheetMaxHClass =
+    step === 1
+      ? "max-h-[min(70vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-12rem))]"
+      : "max-h-[min(52vh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-12rem))]";
 
   const [dispatchPhase, setDispatchPhase] = useState<
     "idle" | "searching" | "options"
@@ -359,8 +363,7 @@ export function RequestWizard() {
       }
       gpsWatchIdRef.current = null;
     }
-    setBusy("Ativando GPS…");
-    setFollowMe(true);
+    setBusy("Obtendo sua localização exata…");
 
     // Force a permission prompt + fast first fix, then keep updating like Uber/99
     navigator.geolocation.getCurrentPosition(
@@ -449,24 +452,66 @@ export function RequestWizard() {
     };
   }, []);
 
-  // When GPS origin updates, reverse geocode to show city/street automatically
+  // Agrupa coordenadas (~100 m) para não spammar reverse a cada tick do GPS
+  const originReverseKey = useMemo(() => {
+    if (!origin.coords) return "";
+    const lat = Math.round(origin.coords.lat * 1000) / 1000;
+    const lng = Math.round(origin.coords.lng * 1000) / 1000;
+    return `${lat},${lng}`;
+  }, [origin.coords?.lat, origin.coords?.lng]);
+
+  // GPS ativo: preenche texto no topo + campos da origem (CEP, rua, cidade…) via reverse geocode
   useEffect(() => {
-    if (!origin.coords) return;
-    const { lat, lng } = origin.coords;
+    if (!originReverseKey) return;
+    const coords = originCoordsRef.current;
+    if (!coords) return;
+    const { lat, lng } = coords;
     const t = window.setTimeout(async () => {
       try {
         const res = await fetch(`/api/reverse?lat=${lat}&lng=${lng}`, {
           cache: "no-store",
         });
-        const data = (await res.json()) as any;
-        const short = (data?.short as string) ?? "";
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          short?: string;
+          parts?: {
+            street?: string;
+            number?: string;
+            neighborhood?: string;
+            city?: string;
+            state?: string;
+            cepDigits?: string;
+          };
+        };
+        const short = data.short ?? "";
         if (short) setOriginLabel(short);
+
+        const p = data.parts;
+        if (!p) return;
+
+        const cepOk =
+          typeof p.cepDigits === "string" && onlyDigits(p.cepDigits).length === 8;
+
+        setOrigin((o) => ({
+          ...o,
+          coords: o.coords,
+          street: p.street?.trim() ? p.street.trim() : o.street,
+          number: p.number?.trim() ? p.number.trim() : o.number,
+          neighborhood: p.neighborhood?.trim()
+            ? p.neighborhood.trim()
+            : o.neighborhood,
+          city: p.city?.trim() ? p.city.trim() : o.city,
+          state: p.state?.trim()
+            ? p.state.trim().toUpperCase().slice(0, 2)
+            : o.state,
+          cep: cepOk ? maskCEP(p.cepDigits!) : o.cep,
+        }));
       } catch {
         // ignore
       }
-    }, 350);
+    }, 600);
     return () => window.clearTimeout(t);
-  }, [origin.coords]);
+  }, [originReverseKey]);
 
   // On final step, ensure map is pinned to the chosen addresses (if user skipped earlier steps).
   useEffect(() => {
@@ -822,8 +867,16 @@ export function RequestWizard() {
     return lines.join("\n");
   }, [vehicle, problem, origin, dest, estimate, name, phone, notes]);
 
+  const gpsPrecisionHint =
+    origin.coords &&
+    typeof gpsAccuracyM === "number" &&
+    Number.isFinite(gpsAccuracyM) &&
+    gpsAccuracyM > 0
+      ? ` · precisão ~${Math.round(gpsAccuracyM)} m`
+      : "";
+
   return (
-    <div className="group relative isolate min-h-screen overflow-hidden bg-bg">
+    <div className="group relative isolate min-h-screen overflow-hidden bg-bg supports-[height:100dvh]:min-h-[100dvh]">
       {/* MAPA FULLSCREEN */}
       <div className="absolute inset-0 z-0">
         <MapPanel
@@ -831,7 +884,7 @@ export function RequestWizard() {
           dest={dest.coords ?? undefined}
           tow={towPos ?? undefined}
           accuracyM={gpsAccuracyM}
-          followOrigin={followMe}
+          followOrigin={Boolean(origin.coords && !dest.coords)}
           className="h-full w-full"
         />
         <div
@@ -843,15 +896,15 @@ export function RequestWizard() {
         />
       </div>
 
-      {/* TOP SEARCH BAR (estilo Uber/99) */}
-      <div className="pointer-events-none relative z-30 px-4 pt-[calc(env(safe-area-inset-top)+16px)]">
-        <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-3xl border border-border bg-panel/90 p-3 shadow-soft backdrop-blur">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+      {/* TOP SEARCH BAR — z-50 para ficar sempre acima do bottom sheet (z-40) e do mapa */}
+      <div className="pointer-events-none relative z-50 px-3 pt-[max(12px,calc(env(safe-area-inset-top)+8px))] sm:px-4 sm:pt-[calc(env(safe-area-inset-top)+16px)]">
+        <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-3xl border border-border bg-panel/90 p-2.5 shadow-soft backdrop-blur sm:p-3">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
+            <div className="flex min-w-0 flex-1 items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setStep(0)}
-                  className="grid h-9 w-9 place-items-center rounded-2xl border border-border bg-panel/90 text-text"
+                  className="grid h-9 w-9 shrink-0 place-items-center rounded-2xl border border-border bg-panel/90 text-text"
                   aria-label="Menu"
                   title="Menu"
                 >
@@ -864,64 +917,62 @@ export function RequestWizard() {
                   className="absolute inset-0 h-full w-full object-cover object-center scale-[1.28]"
                 />
               </div>
-              <div className="leading-tight">
-                <div className="text-sm font-semibold text-text">Disk Guincho</div>
-                <div className="text-xs text-muted">24h · Todo Brasil</div>
+              <div className="min-w-0 leading-tight">
+                <div className="truncate text-sm font-semibold text-text">Disk Guincho</div>
+                <div className="truncate text-xs text-muted">24h · Todo Brasil</div>
               </div>
             </div>
-              <div className="flex flex-wrap items-center justify-end gap-2">
-                <div className="shrink-0 text-xs text-muted">{step + 1}/6</div>
+              <div className="flex shrink-0 items-center justify-end gap-2">
+                <div className="text-xs text-muted tabular-nums">{step + 1}/6</div>
               </div>
           </div>
 
-          <div className="mt-3 grid gap-2">
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-yellow-500" />
-              <div className="flex-1 text-sm text-muted">
+          <div className="mt-2.5 grid gap-2 sm:mt-3">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-start gap-2 sm:items-center">
+              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-yellow-500 sm:mt-0" />
+              <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
                 {origin.coords
                   ? originLabel
-                    ? `Origem: ${originLabel}`
-                    : "Origem (GPS confirmado)"
+                    ? `Origem: ${originLabel}${gpsPrecisionHint}`
+                    : `Origem por GPS${gpsPrecisionHint}`
                   : origin.street || origin.cep
                     ? `Origem: ${buildAddressLine(origin) || origin.cep}`
-                    : "Defina a origem (GPS ou endereço)"}
+                    : "Use sua localização para definir o ponto exato no mapa"}
               </div>
+              </div>
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
               <button
                 type="button"
                 onClick={useGPS}
-                className="rounded-xl bg-yellow-500 px-3 py-2 text-xs font-semibold text-black"
+                className="min-h-9 w-full rounded-xl bg-yellow-500 px-4 py-2 text-xs font-semibold text-black sm:w-auto"
               >
-                GPS
+                {origin.coords ? "Atualizar localização" : "Usar minha localização"}
               </button>
               <button
                 type="button"
                 onClick={() => setStep(0)}
-                className="rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text"
-                title="Editar origem"
+                className="min-h-9 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
+                title="Informar CEP ou endereço manualmente"
               >
-                Origem
+                Digitar endereço
               </button>
-              <button
-                type="button"
-                onClick={() => setFollowMe((v) => !v)}
-                className="rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text"
-                title="Seguir no mapa"
-              >
-                {followMe ? "Seguir" : "Livre"}
-              </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2">
-              <div className="h-2.5 w-2.5 rounded-full bg-white/70" />
-              <div className="flex-1 text-sm text-muted">
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-start gap-2 sm:items-center">
+              <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-white/70 sm:mt-0" />
+              <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
                 {dest.coords
                   ? `Destino: ${destQuery || buildAddressLine(dest) || "Selecionado"}`
                   : "Defina o destino (endereço)"}
               </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setStep(1)}
-                className="rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text"
+                className="min-h-9 w-full shrink-0 rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
                 title="Escolher destino"
               >
                 Destino
@@ -932,7 +983,7 @@ export function RequestWizard() {
       </div>
 
       {err ? (
-        <div className="pointer-events-none relative z-30 px-4 pt-3">
+        <div className="pointer-events-none relative z-50 px-3 pt-2 sm:px-4 sm:pt-3">
           <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-200">
           {err}
         </div>
@@ -940,7 +991,7 @@ export function RequestWizard() {
       ) : null}
 
       {gpsNeedsHttps ? (
-        <div className="pointer-events-none relative z-30 px-4 pt-3">
+        <div className="pointer-events-none relative z-50 px-3 pt-2 sm:px-4 sm:pt-3">
           <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-2xl border border-border bg-panel/90 px-4 py-3 text-sm text-muted backdrop-blur">
             Para GPS real no celular, normalmente precisa abrir em <span className="text-text font-semibold">HTTPS</span>.
             No PC funciona em <span className="text-text font-semibold">localhost</span>.
@@ -949,17 +1000,17 @@ export function RequestWizard() {
       ) : null}
 
       {busy && !(step === 4 && dispatchPhase === "searching") ? (
-        <div className="pointer-events-none relative z-30 px-4 pt-3">
+        <div className="pointer-events-none relative z-50 px-3 pt-2 sm:px-4 sm:pt-3">
           <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-2xl border border-border bg-panel/90 px-4 py-3 text-sm text-muted">
           {busy}
         </div>
         </div>
       ) : null}
 
-      {/* BOTTOM SHEET */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-4 pb-[calc(env(safe-area-inset-bottom)+16px)]">
+      {/* BOTTOM SHEET — fica abaixo do cabeçalho (z-50); altura do miolo limitada por sheetMaxHClass + safe areas */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-40 px-3 pb-[calc(env(safe-area-inset-bottom)+12px)] sm:px-4 sm:pb-[calc(env(safe-area-inset-bottom)+16px)]">
         <div className="pointer-events-auto mx-auto w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/90 shadow-soft backdrop-blur">
-          <div className="p-4">
+          <div className="p-3 sm:p-4">
           <div className="mb-3">
             <div className="text-xs font-semibold uppercase tracking-wide text-yellow-400">
               Solicitar guincho
@@ -1023,7 +1074,7 @@ export function RequestWizard() {
               onClick={useGPS}
               className="h-12 w-full rounded-xl bg-yellow-500 font-semibold text-black hover:bg-yellow-400"
             >
-              Usar minha localização (GPS)
+              Usar minha localização
             </button>
 
             <div className="grid grid-cols-2 gap-3">
@@ -1122,30 +1173,36 @@ export function RequestWizard() {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <div className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Buscar destino (rápido)
+                Para onde vamos
               </div>
               <AddressAutocomplete
-                placeholder="Digite rua, bairro, cidade…"
+                placeholder="Buscar como no GPS — rua, lugar, cidade…"
                 value={destQuery}
                 onChange={setDestQuery}
                 bias={origin.coords ?? undefined}
-                onPick={({ label, coords, address }) => {
+                onPick={({ label, coords, parts }) => {
+                  setErr(null);
                   setDestQuery(label);
+                  const cepOk =
+                    parts?.cepDigits && onlyDigits(parts.cepDigits).length === 8;
                   setDest((d) => ({
                     ...d,
                     coords,
-                    street: address?.road ?? d.street,
-                    neighborhood:
-                      address?.suburb ??
-                      address?.neighbourhood ??
-                      d.neighborhood,
-                    city: address?.city ?? address?.town ?? address?.village ?? d.city,
-                    state: address?.state?.slice?.(0, 2) ?? d.state,
+                    street: parts?.street?.trim() ? parts.street.trim() : d.street,
+                    number: parts?.number?.trim() ? parts.number.trim() : d.number,
+                    neighborhood: parts?.neighborhood?.trim()
+                      ? parts.neighborhood.trim()
+                      : d.neighborhood,
+                    city: parts?.city?.trim() ? parts.city.trim() : d.city,
+                    state: parts?.state?.trim()
+                      ? parts.state.trim().toUpperCase().slice(0, 2)
+                      : d.state,
+                    cep: cepOk ? maskCEP(parts!.cepDigits!) : d.cep,
                   }));
                 }}
               />
               <div className="text-xs text-muted">
-                Dica: comece digitando e escolha uma sugestão.
+                Sugestões via OpenStreetMap (Brasil). Toque num resultado ou pressione Enter na primeira opção — o mapa e o preço atualizam na hora.
               </div>
             </div>
 

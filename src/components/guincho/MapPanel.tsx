@@ -12,6 +12,33 @@ import {
 import L from "leaflet";
 import type { LatLng } from "@/lib/guincho/geo";
 
+/** Mostra origem e destino na mesma vista (estilo “para onde ir” no GPS). */
+function FitOriginDestRoute({
+  origin,
+  dest,
+}: {
+  origin?: LatLng;
+  dest?: LatLng;
+}) {
+  const map = useMap();
+  const lastSig = useRef<string>("");
+
+  useEffect(() => {
+    if (!origin || !dest) {
+      lastSig.current = "";
+      return;
+    }
+    const sig = `${origin.lat.toFixed(5)},${origin.lng.toFixed(5)}|${dest.lat.toFixed(5)},${dest.lng.toFixed(5)}`;
+    if (lastSig.current === sig) return;
+    lastSig.current = sig;
+
+    const b = L.latLngBounds([origin.lat, origin.lng], [dest.lat, dest.lng]);
+    map.fitBounds(b, { padding: [80, 80], maxZoom: 15, animate: true });
+  }, [dest?.lat, dest?.lng, map, origin?.lat, origin?.lng]);
+
+  return null;
+}
+
 function Follow({
   center,
   zoom,
@@ -108,6 +135,10 @@ export function MapPanel({
 
         <Follow center={center} zoom={zoom} follow={Boolean(followOrigin && origin)} />
 
+        {origin && dest ? (
+          <FitOriginDestRoute origin={origin} dest={dest} />
+        ) : null}
+
         {origin ? (
           <>
             {Number.isFinite(accuracyM) && (accuracyM ?? 0) > 0 ? (
@@ -128,20 +159,31 @@ export function MapPanel({
         ) : null}
 
         {origin && dest ? (
-          <Polyline
-            positions={[
-              [origin.lat, origin.lng],
-              [dest.lat, dest.lng],
-            ]}
-            pathOptions={{
-              // Waze-like strong blue
-              color: "#0099FF",
-              weight: 7,
-              opacity: 0.95,
-              lineCap: "round",
-              lineJoin: "round",
-            }}
-          />
+          <>
+            <Polyline
+              positions={[
+                [origin.lat, origin.lng],
+                [dest.lat, dest.lng],
+              ]}
+              pathOptions={{
+                color: "#0099FF",
+                weight: 7,
+                opacity: 0.95,
+                lineCap: "round",
+                lineJoin: "round",
+              }}
+            />
+            <CircleMarker
+              center={[dest.lat, dest.lng]}
+              radius={8}
+              pathOptions={{
+                color: "#ffffff",
+                fillColor: "#0099FF",
+                fillOpacity: 1,
+                weight: 3,
+              }}
+            />
+          </>
         ) : null}
 
         {tow ? (
