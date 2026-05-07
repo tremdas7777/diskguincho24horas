@@ -514,6 +514,7 @@ export function RequestWizard() {
    */
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (isDestinoPage) return; // GPS automático só na página de origem
     if (!navigator.geolocation || !window.isSecureContext) return;
 
     let cancelled = false;
@@ -533,6 +534,7 @@ export function RequestWizard() {
     };
 
     const askBrowserOnceThenWatch = () => {
+      // silencioso: se o cliente negar, ele segue no manual sem mensagem de erro
       void requestGeolocationOnce()
         .then((pos) => {
           if (cancelled) return;
@@ -582,7 +584,7 @@ export function RequestWizard() {
       if (perm) perm.onchange = null;
       clearGpsWatch();
     };
-  }, []);
+  }, [isDestinoPage]);
 
   // Agrupa coordenadas (~100 m) para não spammar reverse a cada tick do GPS
   const originReverseKey = useMemo(() => {
