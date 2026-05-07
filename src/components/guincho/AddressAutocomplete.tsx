@@ -57,6 +57,8 @@ export function AddressAutocomplete({
   bias,
   onPick,
   onPreviewCoords,
+  showSearchIcon = false,
+  light = false,
 }: {
   placeholder: string;
   value: string;
@@ -70,6 +72,9 @@ export function AddressAutocomplete({
   }) => void;
   /** Atualiza o mapa com a sugestão “em foco” (primeira, hover ou teclado). */
   onPreviewCoords?: (coords: LatLng | null) => void;
+  showSearchIcon?: boolean;
+  /** Visual claro (fundo branco, texto preto). */
+  light?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -217,8 +222,45 @@ export function AddressAutocomplete({
     <div className="relative isolate z-[60]">
       <div
         ref={inputWrapRef}
-        className="flex min-h-11 items-center gap-2 rounded-2xl border border-border bg-panel/95 px-3 py-2.5 shadow-sm backdrop-blur-sm"
+        className={[
+          "flex w-full min-h-10 items-center gap-3 rounded-[24px] px-4 py-2",
+          light
+            ? "border border-black/10 bg-white"
+            : "border border-white/6 bg-white/[0.05] backdrop-blur-sm",
+        ].join(" ")}
       >
+        {showSearchIcon ? (
+          <div
+            aria-hidden="true"
+            className={[
+              "grid h-7 w-7 shrink-0 place-items-center rounded-2xl",
+              light ? "text-black/50" : "text-white/45",
+            ].join(" ")}
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M10.5 18C14.6421 18 18 14.6421 18 10.5C18 6.35786 14.6421 3 10.5 3C6.35786 3 3 6.35786 3 10.5C3 14.6421 6.35786 18 10.5 18Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M21 21L16.65 16.65"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </div>
+        ) : null}
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -226,7 +268,10 @@ export function AddressAutocomplete({
           autoComplete="off"
           autoCorrect="off"
           spellCheck={false}
-          className="min-h-9 w-full min-w-0 bg-transparent text-[15px] leading-snug text-text outline-none placeholder:text-muted touch-manipulation"
+          className={[
+            "min-h-9 w-full min-w-0 bg-transparent text-[16px] leading-snug outline-none touch-manipulation",
+            light ? "text-black placeholder:text-black/40" : "text-text placeholder:text-white/40",
+          ].join(" ")}
           onKeyDown={(e) => {
             if (!shown.length) return;
             if (e.key === "ArrowDown") {

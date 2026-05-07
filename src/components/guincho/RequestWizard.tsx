@@ -1039,6 +1039,7 @@ export function RequestWizard() {
         <div className="pointer-events-auto mx-auto w-full max-w-xl rounded-3xl border border-border bg-panel/90 p-2.5 shadow-soft backdrop-blur sm:p-3">
           <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
             <div className="flex min-w-0 flex-1 items-center gap-2">
+              {!isDestinoPage ? (
                 <button
                   type="button"
                   onClick={() => setStep(0)}
@@ -1048,7 +1049,8 @@ export function RequestWizard() {
                 >
                   ☰
                 </button>
-              <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_2px_14px_rgba(var(--brand-rgb),0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.35)]">
+              ) : null}
+              <div className="relative h-9 w-9 shrink-0 overflow-hidden rounded-full bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_2px_14px_rgba(var(--brand-rgb),0.55),inset_0_1px_0_rgba(255,255,255,0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.35)] sm:h-10 sm:w-10">
                 <img
                   src="/images/logo-guincho.png"
                   alt="Disk Guincho"
@@ -1056,13 +1058,19 @@ export function RequestWizard() {
                 />
               </div>
               <div className="min-w-0 leading-tight">
-                <div className="truncate text-sm font-semibold text-text">Disk Guincho</div>
-                <div className="truncate text-xs text-muted">24h · Todo Brasil</div>
+                <div className="truncate text-sm font-semibold text-text">
+                  {isDestinoPage ? "Destino" : "Disk Guincho"}
+                </div>
+                <div className="truncate text-xs text-muted">
+                  {isDestinoPage ? "" : "24h · Todo Brasil"}
+                </div>
               </div>
             </div>
+            {!isDestinoPage ? (
               <div className="flex shrink-0 items-center justify-end gap-2">
                 <div className="text-xs text-muted tabular-nums">{step + 1}/6</div>
               </div>
+            ) : null}
           </div>
 
           <div className="mt-2.5 grid gap-2 sm:mt-3">
@@ -1100,28 +1108,7 @@ export function RequestWizard() {
               </div>
             ) : null}
 
-            {canShowDestinationUi ? (
-              <div className="grid grid-cols-1 gap-2 rounded-2xl border border-border bg-panel/90 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-                <div className="flex min-w-0 items-start gap-2 sm:items-center">
-                  <div className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full bg-white/70 sm:mt-0" />
-                  <div className="min-w-0 flex-1 text-sm leading-snug text-muted sm:line-clamp-2">
-                    {dest.coords
-                      ? `Destino: ${destQuery || buildAddressLine(dest) || "Selecionado"}`
-                      : "Agora defina o destino (endereço)"}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigate({ to: "/destino" });
-                  }}
-                  className="min-h-10 w-full rounded-xl border border-border bg-panel/90 px-3 py-2 text-xs font-semibold text-text sm:w-auto"
-                  title="Escolher destino"
-                >
-                  Destino
-                </button>
-              </div>
-            ) : null}
+            {/* Destino fica só na página /destino (campo de busca). */}
           </div>
         </div>
       </div>
@@ -1303,18 +1290,17 @@ export function RequestWizard() {
         ) : null}
 
         {step === 1 ? (
-          <div className="grid gap-4">
-            <div className="rounded-2xl border border-border/80 bg-panel/35 p-3 sm:p-4">
+          <div className="grid gap-4 pt-2">
+            <div className="rounded-2xl border border-border/80 bg-panel/35 p-2 sm:p-3">
               <div className="grid gap-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-muted">
-                Para onde vamos
-              </div>
               <AddressAutocomplete
-                placeholder="Buscar como no GPS — rua, lugar, cidade…"
+                placeholder="Para onde vamos?"
                 value={destQuery}
                 onChange={setDestQuery}
                 bias={origin.coords ?? undefined}
                 onPreviewCoords={setDestPreviewCoords}
+                showSearchIcon={true}
+                light={true}
                 onPick={({ label, coords, parts }) => {
                   setErr(null);
                   setDestPreviewCoords(null);
@@ -1398,23 +1384,7 @@ export function RequestWizard() {
               </Field>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void geocodeAddress("dest")}
-              className="h-12 w-full rounded-xl border border-border bg-panel/90 font-semibold hover:bg-white/5"
-            >
-              Confirmar destino no mapa
-            </button>
-
-            {dest.coords ? (
-              <div className="rounded-2xl border border-border bg-panel/90 px-4 py-3 text-sm text-muted">
-                Destino confirmado no mapa.
-              </div>
-            ) : null}
-
-            <div className="rounded-2xl border border-border bg-panel/90 px-4 py-3 text-sm text-muted">
-              O preço muda conforme a distância (origem → destino). Confirme o destino no mapa para calcular.
-            </div>
+            
           </div>
         ) : null}
 
