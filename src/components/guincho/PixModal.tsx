@@ -25,10 +25,12 @@ export function PixModal({
   const [copied, setCopied] = useState(false);
 
   const payload = useMemo(() => copyText || pixUrl, [copyText, pixUrl]);
+  const isGenerating = !qr;
 
   useEffect(() => {
     if (!open) return;
     let mounted = true;
+    setQr("");
     QRCode.toDataURL(pixUrl, { margin: 1, width: 640 })
       .then((data) => {
         if (mounted) setQr(data);
@@ -58,12 +60,21 @@ export function PixModal({
 
       <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/95 shadow-soft backdrop-blur">
         <div className="flex items-start justify-between gap-3 border-b border-border/70 p-4">
-          <div>
+          <div className="flex items-start gap-3">
+            <div className="relative mt-0.5 h-10 w-10 shrink-0 overflow-hidden rounded-2xl bg-gradient-to-b from-[color:var(--brand-2)] to-[color:var(--brand)] shadow-[0_8px_24px_rgba(var(--brand-rgb),0.35)] ring-2 ring-[rgba(var(--brand-rgb),0.25)]">
+              <img
+                src="/images/logo-guincho.png"
+                alt="Disk Guincho"
+                className="absolute inset-0 h-full w-full object-cover object-center scale-[1.15]"
+              />
+            </div>
+            <div className="min-w-0">
             <div className="text-xs font-semibold uppercase tracking-wide text-[color:var(--brand-2)]">
               Pagamento Pix
             </div>
             <div className="mt-1 text-base font-semibold text-text">{title}</div>
             <div className="mt-1 text-sm text-muted">{amountLabel}</div>
+            </div>
           </div>
           <button
             type="button"
@@ -76,6 +87,12 @@ export function PixModal({
         </div>
 
         <div className="grid gap-3 p-4">
+          <div className="rounded-2xl border border-border bg-black/15 p-3 text-sm text-text">
+            Assim que o pagamento for <span className="font-semibold">confirmado</span>, o{" "}
+            <span className="font-semibold">guincho irá se deslocar até você</span> e um{" "}
+            <span className="font-semibold">chat com o motorista</span> será aberto automaticamente.
+          </div>
+
           <div className="grid place-items-center rounded-2xl border border-border bg-black/20 p-3">
             {qr ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -85,7 +102,13 @@ export function PixModal({
                 className="h-[260px] w-[260px] rounded-xl bg-white p-2"
               />
             ) : (
-              <div className="h-[260px] w-[260px] rounded-xl bg-white/10" />
+              <div className="grid h-[260px] w-[260px] place-items-center rounded-xl bg-white/10">
+                <div className="text-center">
+                  <div className="mx-auto mb-3 h-10 w-10 animate-spin rounded-full border-2 border-white/25 border-t-white/80" />
+                  <div className="text-sm font-semibold text-text">Gerando Pix…</div>
+                  <div className="mt-1 text-xs text-muted">Aguarde alguns segundos</div>
+                </div>
+              </div>
             )}
           </div>
 
@@ -116,9 +139,13 @@ export function PixModal({
               href={pixUrl}
               target="_blank"
               rel="noreferrer"
-              className="h-12 rounded-2xl bg-[color:var(--brand)] text-center text-sm font-semibold leading-[48px] text-white hover:bg-[rgba(var(--brand-rgb),0.90)]"
+              className={[
+                "h-12 rounded-2xl text-center text-sm font-semibold leading-[48px] text-white",
+                "bg-[color:var(--brand)] hover:bg-[rgba(var(--brand-rgb),0.90)]",
+                isGenerating ? "pointer-events-none opacity-60" : "",
+              ].join(" ")}
             >
-              Abrir Pix
+              Pagar no Pix
             </a>
           </div>
 

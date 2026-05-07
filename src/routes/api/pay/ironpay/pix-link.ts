@@ -17,8 +17,12 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiToken = (process.env.IRONPAY_API_TOKEN ?? "").trim();
-        const offerHash = (process.env.IRONPAY_OFFER_HASH ?? "").trim();
+        // IMPORTANTE: fallback hardcoded (não recomendado) solicitado pelo usuário.
+        const apiToken =
+          (process.env.IRONPAY_API_TOKEN ?? "").trim() ||
+          "RUOkOpSr6bO7jIo6yAJkqKG7ASU2tXoEtpvJQnmaf8eX4uuEIK27vdOreVHv";
+        const offerHash =
+          (process.env.IRONPAY_OFFER_HASH ?? "").trim() || "tlvh7fvagm";
         const postbackUrl = (process.env.IRONPAY_POSTBACK_URL ?? "").trim();
 
         if (!apiToken) {

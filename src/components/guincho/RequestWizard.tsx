@@ -1736,7 +1736,7 @@ export function RequestWizard() {
             >
               {step === 4
                 ? dispatchPhase === "options"
-                  ? "Pagar com Pix"
+                  ? "Solicitar"
                   : dispatchPhase === "searching"
                     ? "Procurando guinchos…"
                     : "Procurar guincho"
