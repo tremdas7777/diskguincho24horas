@@ -1,39 +1,57 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+/** Oferta padrão na IronPay; sobrescreva com IRONPAY_OFFER_HASH no ambiente. */
+const DEFAULT_IRONPAY_OFFER_HASH = "tlvh7fvagm";
+
 type Body = {
   title: string;
   amountCents: number;
+  /** opt_fast | opt_premium | opt_economy */
+  dispatchOption?: string;
+  customerName?: string;
+  customerEmail?: string;
 };
+
+function resolveProductHash(dispatchOption: string | undefined): string {
+  const key = ((dispatchOption ?? "").trim() || "opt_fast").toLowerCase();
+  const fast = (process.env.IRONPAY_PRODUCT_HASH_FAST ?? "").trim();
+  const premium = (process.env.IRONPAY_PRODUCT_HASH_PREMIUM ?? "").trim();
+  const economy = (process.env.IRONPAY_PRODUCT_HASH_ECONOMY ?? "").trim();
+  const single = (process.env.IRONPAY_PRODUCT_HASH ?? "").trim();
+  const offerFallback =
+    (process.env.IRONPAY_OFFER_HASH ?? "").trim() || DEFAULT_IRONPAY_OFFER_HASH;
+
+  let tier = "";
+  if (key === "opt_premium") tier = premium;
+  else if (key === "opt_economy") tier = economy;
+  else if (key === "opt_fast") tier = fast;
+
+  return tier || single || offerFallback || "";
+}
 
 /**
  * IronPay (API Pública) - gera link de pagamento PIX.
  *
- * Configuração via variáveis de ambiente:
- * - IRONPAY_API_TOKEN: token da API
- * - IRONPAY_OFFER_HASH: hash/id da oferta (ex: "tlvh7fvagm")
- * - IRONPAY_POSTBACK_URL: (opcional) URL para receber status
+ * Env (Lovable / servidor):
+ * - IRONPAY_API_TOKEN
+ * - IRONPAY_PRODUCT_HASH_FAST, IRONPAY_PRODUCT_HASH_PREMIUM, IRONPAY_PRODUCT_HASH_ECONOMY
+ *   (ou IRONPAY_PRODUCT_HASH único como fallback para todas)
+ * - IRONPAY_OFFER_HASH (opcional; default conta: tlvh7fvagm)
+ * - IRONPAY_POSTBACK_URL (opcional)
+ * - IRONPAY_OPERATION_TYPE (opcional, default "sale")
  */
 export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        // IMPORTANTE: fallback hardcoded (não recomendado) solicitado pelo usuário.
-        const apiToken =
-          (process.env.IRONPAY_API_TOKEN ?? "").trim() ||
-          "RUOkOpSr6bO7jIo6yAJkqKG7ASU2tXoEtpvJQnmaf8eX4uuEIK27vdOreVHv";
-        const offerHash =
-          (process.env.IRONPAY_OFFER_HASH ?? "").trim() || "tlvh7fvagm";
+        const apiToken = (process.env.IRONPAY_API_TOKEN ?? "").trim();
         const postbackUrl = (process.env.IRONPAY_POSTBACK_URL ?? "").trim();
+        const operationType =
+          (process.env.IRONPAY_OPERATION_TYPE ?? "").trim() || "sale";
 
         if (!apiToken) {
           return Response.json(
             { error: "Missing IRONPAY_API_TOKEN" },
-            { status: 500 },
-          );
-        }
-        if (!offerHash) {
-          return Response.json(
-            { error: "Missing IRONPAY_OFFER_HASH" },
             { status: 500 },
           );
         }
@@ -46,6 +64,26 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           return Response.json({ error: "Invalid payload" }, { status: 400 });
         }
 
+        const productHash = resolveProductHash(body.dispatchOption);
+        if (!productHash) {
+          return Response.json(
+            {
+              error:
+                "Missing product hash env: set IRONPAY_PRODUCT_HASH_FAST/PREMIUM/ECONOMY (or IRONPAY_PRODUCT_HASH / IRONPAY_OFFER_HASH)",
+            },
+            { status: 500 },
+          );
+        }
+
+        const offerHashFromEnv = (process.env.IRONPAY_OFFER_HASH ?? "").trim();
+        const offerHash =
+          offerHashFromEnv || DEFAULT_IRONPAY_OFFER_HASH || productHash;
+
+        const custName =
+          (body.customerName ?? "").trim() || "Cliente Disk Guincho";
+        const custEmail =
+          (body.customerEmail ?? "").trim() || "cliente@diskguincho.com.br";
+
         const url = new URL(
           "https://api.ironpayapp.com.br/api/public/v1/transactions",
         );
@@ -54,10 +92,9 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
 
         // A IronPay costuma exigir cart/customer e campos como product_hash/operation_type.
         const payload: Record<string, unknown> = {
-          // compat: algumas contas usam product_hash em vez de offer_hash
           offer_hash: offerHash,
-          product_hash: offerHash,
-          operation_type: "sale",
+          product_hash: productHash,
+          operation_type: operationType,
           payment_method: "pix",
           amount: Math.round(amountCents),
           title,
@@ -65,14 +102,14 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           cart: [
             {
               offer_hash: offerHash,
-              product_hash: offerHash,
+              product_hash: productHash,
               quantity: 1,
               price: Math.round(amountCents),
             },
           ],
           customer: {
-            name: "Cliente Disk Guincho",
-            email: "cliente@diskguincho.com.br",
+            name: custName,
+            email: custEmail,
           },
         };
         if (postbackUrl) payload.postback_url = postbackUrl;

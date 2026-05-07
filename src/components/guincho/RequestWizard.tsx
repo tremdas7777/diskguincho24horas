@@ -1005,13 +1005,23 @@ export function RequestWizard() {
         body: JSON.stringify({
           title: `Guincho 24h (${vehicle}) — ${(estimate?.km ?? 0).toFixed(1)} km`,
           amountCents: Math.round(amount * 100),
+          dispatchOption: selectedDispatchId || "opt_fast",
+          customerName: name.trim() || undefined,
+          customerEmail: (() => {
+            const d = phone.replace(/\D/g, "");
+            return d ? `pix+${d}@diskguincho.com.br` : undefined;
+          })(),
         }),
       });
       const data = (await res.json()) as any;
       if (!res.ok) {
+        const msg =
+          data?.details?.message ??
+          data?.error ??
+          (typeof data?.details === "string" ? data.details : null);
         setErr(
-          data?.details?.message
-            ? `Erro ao gerar Pix (IronPay): ${String(data.details.message)}`
+          msg
+            ? `Erro ao gerar Pix (IronPay): ${String(msg)}`
             : "Erro ao gerar Pix (IronPay). Verifique as configurações.",
         );
         return;

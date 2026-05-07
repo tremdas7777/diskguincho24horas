@@ -5,10 +5,7 @@ export const Route = createFileRoute("/api/pay/ironpay/status")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        // IMPORTANTE: fallback hardcoded (não recomendado) solicitado pelo usuário.
-        const apiToken =
-          (process.env.IRONPAY_API_TOKEN ?? "").trim() ||
-          "RUOkOpSr6bO7jIo6yAJkqKG7ASU2tXoEtpvJQnmaf8eX4uuEIK27vdOreVHv";
+        const apiToken = (process.env.IRONPAY_API_TOKEN ?? "").trim();
 
         const { searchParams } = new URL(request.url);
         const transactionHash = (searchParams.get("transactionHash") ?? "").trim();
