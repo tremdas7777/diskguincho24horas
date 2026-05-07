@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { getAdminSettings, saveAdminSettings } from "@/server/admin-settings.functions";
+import { getAdminSettings, saveAdminSettings } from "@/lib/admin-settings.functions";
 
 export const Route = createFileRoute("/admin/settings")({
   head: () => ({ meta: [{ title: "Admin · Configurações — Disk Guincho" }] }),
