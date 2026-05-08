@@ -59,7 +59,7 @@ export function PixModal({
         onClick={onClose}
       />
 
-      <div className="relative w-full max-w-xl overflow-hidden rounded-3xl border border-border bg-panel/95 shadow-soft backdrop-blur">
+      <div className="relative flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-border bg-panel/95 shadow-soft backdrop-blur max-h-[calc(100vh-96px)]">
         {/* Cabeçalho fixo do Pix */}
         <div className="sticky top-0 z-10 border-b border-border/70 bg-panel/95 backdrop-blur">
           <div className="flex items-start justify-between gap-3 p-4">
@@ -90,7 +90,9 @@ export function PixModal({
           </div>
         </div>
 
-        <div className="grid gap-3 p-4">
+        {/* Corpo rolável: garante que o cabeçalho sempre apareça no mobile */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="grid gap-3 p-4">
           <div className="rounded-2xl border border-border bg-black/15 p-3 text-sm text-text">
             Assim que o pagamento for <span className="font-semibold">confirmado</span>, o{" "}
             <span className="font-semibold">guincho irá se deslocar até você</span> e um{" "}
@@ -227,6 +229,7 @@ export function PixModal({
                 </div>
               ) : null}
             </div>
+          </div>
           </div>
         </div>
       </div>
