@@ -18,6 +18,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as ApiReverseRouteImport } from './routes/api/reverse'
 import { Route as ApiGeocodeRouteImport } from './routes/api/geocode'
 import { Route as ApiAutocompleteRouteImport } from './routes/api/autocomplete'
+import { Route as AdminUtmsRouteImport } from './routes/admin.utms'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminLoginRouteImport } from './routes/admin.login'
 import { Route as AdminLeadsRouteImport } from './routes/admin.leads'
@@ -28,6 +29,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as ApiPublicAnalyticsRouteImport } from './routes/api/public/analytics'
 import { Route as ApiLeadsTrackRouteImport } from './routes/api/leads/track'
 import { Route as ApiAdminVerifyRouteImport } from './routes/api/admin/verify'
+import { Route as ApiAdminUtmsRouteImport } from './routes/api/admin/utms'
 import { Route as ApiAdminLeadsRouteImport } from './routes/api/admin/leads'
 import { Route as ApiAdminFunilRouteImport } from './routes/api/admin/funil'
 import { Route as ApiAdminFinancasRouteImport } from './routes/api/admin/financas'
@@ -85,6 +87,11 @@ const ApiAutocompleteRoute = ApiAutocompleteRouteImport.update({
   path: '/api/autocomplete',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminUtmsRoute = AdminUtmsRouteImport.update({
+  id: '/admin/utms',
+  path: '/admin/utms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSettingsRoute = AdminSettingsRouteImport.update({
   id: '/admin/settings',
   path: '/admin/settings',
@@ -133,6 +140,11 @@ const ApiLeadsTrackRoute = ApiLeadsTrackRouteImport.update({
 const ApiAdminVerifyRoute = ApiAdminVerifyRouteImport.update({
   id: '/api/admin/verify',
   path: '/api/admin/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminUtmsRoute = ApiAdminUtmsRouteImport.update({
+  id: '/api/admin/utms',
+  path: '/api/admin/utms',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiAdminLeadsRoute = ApiAdminLeadsRouteImport.update({
@@ -205,6 +217,7 @@ export interface FileRoutesByFullPath {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/utms': typeof AdminUtmsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
@@ -214,6 +227,7 @@ export interface FileRoutesByFullPath {
   '/api/admin/financas': typeof ApiAdminFinancasRoute
   '/api/admin/funil': typeof ApiAdminFunilRoute
   '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/utms': typeof ApiAdminUtmsRoute
   '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
@@ -237,6 +251,7 @@ export interface FileRoutesByTo {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/utms': typeof AdminUtmsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
@@ -246,6 +261,7 @@ export interface FileRoutesByTo {
   '/api/admin/financas': typeof ApiAdminFinancasRoute
   '/api/admin/funil': typeof ApiAdminFunilRoute
   '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/utms': typeof ApiAdminUtmsRoute
   '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
@@ -270,6 +286,7 @@ export interface FileRoutesById {
   '/admin/leads': typeof AdminLeadsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/settings': typeof AdminSettingsRoute
+  '/admin/utms': typeof AdminUtmsRoute
   '/api/autocomplete': typeof ApiAutocompleteRoute
   '/api/geocode': typeof ApiGeocodeRoute
   '/api/reverse': typeof ApiReverseRoute
@@ -279,6 +296,7 @@ export interface FileRoutesById {
   '/api/admin/financas': typeof ApiAdminFinancasRoute
   '/api/admin/funil': typeof ApiAdminFunilRoute
   '/api/admin/leads': typeof ApiAdminLeadsRoute
+  '/api/admin/utms': typeof ApiAdminUtmsRoute
   '/api/admin/verify': typeof ApiAdminVerifyRoute
   '/api/leads/track': typeof ApiLeadsTrackRoute
   '/api/public/analytics': typeof ApiPublicAnalyticsRoute
@@ -304,6 +322,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/utms'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
@@ -313,6 +332,7 @@ export interface FileRouteTypes {
     | '/api/admin/financas'
     | '/api/admin/funil'
     | '/api/admin/leads'
+    | '/api/admin/utms'
     | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
@@ -336,6 +356,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/utms'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
@@ -345,6 +366,7 @@ export interface FileRouteTypes {
     | '/api/admin/financas'
     | '/api/admin/funil'
     | '/api/admin/leads'
+    | '/api/admin/utms'
     | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
@@ -368,6 +390,7 @@ export interface FileRouteTypes {
     | '/admin/leads'
     | '/admin/login'
     | '/admin/settings'
+    | '/admin/utms'
     | '/api/autocomplete'
     | '/api/geocode'
     | '/api/reverse'
@@ -377,6 +400,7 @@ export interface FileRouteTypes {
     | '/api/admin/financas'
     | '/api/admin/funil'
     | '/api/admin/leads'
+    | '/api/admin/utms'
     | '/api/admin/verify'
     | '/api/leads/track'
     | '/api/public/analytics'
@@ -401,6 +425,7 @@ export interface RootRouteChildren {
   AdminLeadsRoute: typeof AdminLeadsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
+  AdminUtmsRoute: typeof AdminUtmsRoute
   ApiAutocompleteRoute: typeof ApiAutocompleteRoute
   ApiGeocodeRoute: typeof ApiGeocodeRoute
   ApiReverseRoute: typeof ApiReverseRoute
@@ -410,6 +435,7 @@ export interface RootRouteChildren {
   ApiAdminFinancasRoute: typeof ApiAdminFinancasRoute
   ApiAdminFunilRoute: typeof ApiAdminFunilRoute
   ApiAdminLeadsRoute: typeof ApiAdminLeadsRoute
+  ApiAdminUtmsRoute: typeof ApiAdminUtmsRoute
   ApiAdminVerifyRoute: typeof ApiAdminVerifyRoute
   ApiLeadsTrackRoute: typeof ApiLeadsTrackRoute
   ApiPublicAnalyticsRoute: typeof ApiPublicAnalyticsRoute
@@ -486,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAutocompleteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/utms': {
+      id: '/admin/utms'
+      path: '/admin/utms'
+      fullPath: '/admin/utms'
+      preLoaderRoute: typeof AdminUtmsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/settings': {
       id: '/admin/settings'
       path: '/admin/settings'
@@ -554,6 +587,13 @@ declare module '@tanstack/react-router' {
       path: '/api/admin/verify'
       fullPath: '/api/admin/verify'
       preLoaderRoute: typeof ApiAdminVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/utms': {
+      id: '/api/admin/utms'
+      path: '/api/admin/utms'
+      fullPath: '/api/admin/utms'
+      preLoaderRoute: typeof ApiAdminUtmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/admin/leads': {
@@ -649,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminLeadsRoute: AdminLeadsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminSettingsRoute: AdminSettingsRoute,
+  AdminUtmsRoute: AdminUtmsRoute,
   ApiAutocompleteRoute: ApiAutocompleteRoute,
   ApiGeocodeRoute: ApiGeocodeRoute,
   ApiReverseRoute: ApiReverseRoute,
@@ -658,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdminFinancasRoute: ApiAdminFinancasRoute,
   ApiAdminFunilRoute: ApiAdminFunilRoute,
   ApiAdminLeadsRoute: ApiAdminLeadsRoute,
+  ApiAdminUtmsRoute: ApiAdminUtmsRoute,
   ApiAdminVerifyRoute: ApiAdminVerifyRoute,
   ApiLeadsTrackRoute: ApiLeadsTrackRoute,
   ApiPublicAnalyticsRoute: ApiPublicAnalyticsRoute,
@@ -671,3 +713,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
