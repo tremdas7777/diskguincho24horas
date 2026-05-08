@@ -46,7 +46,10 @@ export const Route = createFileRoute("/api/autocomplete")({
           Accept: "application/json",
         };
 
-        const buildSearchUrl = (query: string) => {
+        const buildSearchUrl = (
+          query: string,
+          opts?: { d?: number; bounded?: boolean },
+        ) => {
           const url = new URL("https://nominatim.openstreetmap.org/search");
           url.searchParams.set("format", "jsonv2");
           url.searchParams.set("addressdetails", "1");
@@ -57,20 +60,26 @@ export const Route = createFileRoute("/api/autocomplete")({
           url.searchParams.set("countrycodes", "br");
           url.searchParams.set("accept-language", "pt-BR");
           url.searchParams.set("q", query);
-          /* Viés geográfico perto da origem (como apps de GPS), sem travar fora da caixa */
+          /* Viés geográfico perto do cliente */
           if (Number.isFinite(lat) && Number.isFinite(lng)) {
-            const d = 0.9; // caixa maior para achar bairros/ruas
+            const d = Math.max(0.05, Math.min(opts?.d ?? 0.35, 2)); // caixa menor por padrão
             url.searchParams.set(
               "viewbox",
               `${lng - d},${lat + d},${lng + d},${lat - d}`,
             );
-            url.searchParams.set("bounded", "0");
+            // bounded=1 limita à caixa; bounded=0 só dá viés
+            url.searchParams.set("bounded", opts?.bounded ? "1" : "0");
           }
           return url;
         };
 
-        const fetchSearch = async (query: string) => {
-          const res = await fetch(buildSearchUrl(query).toString(), { headers });
+        const fetchSearch = async (
+          query: string,
+          opts?: { d?: number; bounded?: boolean },
+        ) => {
+          const res = await fetch(buildSearchUrl(query, opts).toString(), {
+            headers,
+          });
           if (!res.ok) {
             return { ok: false as const, status: res.status, data: [] as RawNominatim[] };
           }
@@ -78,18 +87,51 @@ export const Route = createFileRoute("/api/autocomplete")({
           return { ok: true as const, status: res.status, data };
         };
 
-        // 1) Busca principal (texto puro do usuário)
-        const res1 = await fetchSearch(q);
+        const hasBias = Number.isFinite(lat) && Number.isFinite(lng);
+        const ref: LatLng | null = hasBias ? { lat, lng } : null;
+        const maxDistanceKm = 35; // limita resultados mais próximos do cliente
+
+        const withDistance = <T extends { lat: number; lng: number }>(items: T[]) =>
+          ref
+            ? items.map((s) => ({
+                ...s,
+                distanceKm: haversineKm(ref, { lat: s.lat, lng: s.lng }),
+              }))
+            : items;
+
+        const filterAndSortNear = <T extends { distanceKm?: number }>(items: T[]) => {
+          if (!ref) return items;
+          return items
+            .filter(
+              (s) =>
+                typeof s.distanceKm === "number" &&
+                Number.isFinite(s.distanceKm) &&
+                s.distanceKm <= maxDistanceKm,
+            )
+            .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0));
+        };
+
+        // 1) Busca principal: se temos localização do cliente, limita à caixa (bounded=1)
+        const res1 = await fetchSearch(q, hasBias ? { d: 0.25, bounded: true } : undefined);
         if (!res1.ok) {
           return Response.json(
             { error: `Autocomplete failed (${res1.status})` },
             { status: 502 },
           );
         }
-        let suggestions = mapSuggestions(res1.data);
+        let suggestions = filterAndSortNear(withDistance(mapSuggestions(res1.data)));
 
-        // 2) Se vier pouca coisa e temos viés, tentamos “completar” com cidade/UF da região
-        if (suggestions.length < 4 && Number.isFinite(lat) && Number.isFinite(lng)) {
+        // 2) Se vier pouca coisa: fallback progressivo (ainda perto, mas menos restrito)
+        if (suggestions.length < 4 && hasBias) {
+          const resNear = await fetchSearch(q, { d: 0.6, bounded: true });
+          if (resNear.ok) {
+            const near2 = filterAndSortNear(withDistance(mapSuggestions(resNear.data)));
+            suggestions = dedupeById([...suggestions, ...near2]);
+          }
+        }
+
+        // 3) Se ainda vier pouca coisa, tentamos “completar” com cidade/UF da região
+        if (suggestions.length < 4 && hasBias) {
           const rev = new URL("https://nominatim.openstreetmap.org/reverse");
           rev.searchParams.set("format", "jsonv2");
           rev.searchParams.set("addressdetails", "1");
@@ -108,24 +150,25 @@ export const Route = createFileRoute("/api/autocomplete")({
           const cityState = [parts.city, parts.state].filter(Boolean).join(" - ");
           if (cityState) {
             const q2 = `${q}, ${cityState}`;
-            const res2 = await fetchSearch(q2);
+            const res2 = await fetchSearch(q2, { d: 0.9, bounded: false });
             if (res2.ok) {
-              suggestions = dedupeById([...suggestions, ...mapSuggestions(res2.data)]);
+              const extra = filterAndSortNear(withDistance(mapSuggestions(res2.data)));
+              suggestions = dedupeById([...suggestions, ...extra]);
             }
           }
         }
 
-        if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          const ref: LatLng = { lat, lng };
-          suggestions = suggestions
-            .map((s) => ({
-              ...s,
-              distanceKm: haversineKm(ref, { lat: s.lat, lng: s.lng }),
-            }))
-            .sort((a, b) => a.distanceKm - b.distanceKm);
+        // Último fallback: se nada apareceu, volta a busca ampla (sem bounded) para não “morrer” vazio
+        if (!suggestions.length && hasBias) {
+          const resWide = await fetchSearch(q, { d: 1.2, bounded: false });
+          if (resWide.ok) {
+            suggestions = withDistance(mapSuggestions(resWide.data)).sort(
+              (a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0),
+            );
+          }
         }
 
-        return Response.json({ suggestions });
+        return Response.json({ suggestions: suggestions.slice(0, 12) });
       },
     },
   },
