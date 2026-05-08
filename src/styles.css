@@ -138,15 +138,17 @@
     border-color: var(--color-border);
   }
 
+  /* Fundo preto no “borrão” do overscroll (mobile) e atrás do app inteiro */
   html {
-    background-color: var(--color-bg);
+    background-color: #000;
+    overscroll-behavior: none;
   }
 
   body {
-    background-color: var(--color-bg);
+    background-color: #000;
     color: var(--color-text);
     min-height: 100dvh;
-    overscroll-behavior-y: none;
+    overscroll-behavior: none;
   }
 }
 
@@ -208,6 +210,11 @@ body.app-bg-root,
 
 .leaflet-pane { z-index: 0; }
 .leaflet-top, .leaflet-bottom { z-index: 10; }
+
+/* Ao arrastar o mapa, gaps entre tiles não mostram cinza padrão do Leaflet */
+.leaflet-container {
+  background-color: #000 !important;
+}
 
 @keyframes guincho-search {
   0%, 100% { transform: translateY(0) scale(1); filter: brightness(1); }

@@ -99,6 +99,17 @@ function moneyBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Preço sobre a estimativa base: premium não pode ser mais caro que rápido (prioridade de chegada). */
+const DISPATCH_PRICE_MULT: Record<string, number> = {
+  opt_premium: 1.1,
+  opt_fast: 1.18,
+  opt_economy: 0.9,
+};
+
+function dispatchPriceMultiplier(optionId: string): number {
+  return DISPATCH_PRICE_MULT[optionId] ?? 1.0;
+}
+
 function cepDigitsOk(cep: string) {
   return onlyDigits(cep).length === 8;
 }
@@ -478,10 +489,7 @@ export function RequestWizard() {
   }, [origin.coords, dest.coords]);
 
   function selectedOptionMultiplier() {
-    if (selectedDispatchId === "opt_fast") return 1.18;
-    if (selectedDispatchId === "opt_premium") return 1.28;
-    if (selectedDispatchId === "opt_economy") return 0.9;
-    return 1.0;
+    return dispatchPriceMultiplier(selectedDispatchId);
   }
 
   const canNext = useMemo(() => {
@@ -1190,14 +1198,14 @@ export function RequestWizard() {
       {
         id: "opt_fast",
         label: "Guincho rápido",
-        etaMin: 10,
-        note: "Chega em ~10 minutos",
+        etaMin: 12,
+        note: "Chega em ~12 minutos",
       },
       {
         id: "opt_premium",
         label: "Guincho premium",
-        etaMin: 15,
-        note: "Chega em ~15 minutos",
+        etaMin: 8,
+        note: "Chega em ~8 minutos · prioridade",
       },
       {
         id: "opt_economy",
@@ -1239,9 +1247,9 @@ export function RequestWizard() {
       : "";
 
   return (
-    <div className="group relative isolate min-h-screen overflow-hidden bg-bg supports-[height:100dvh]:min-h-[100dvh]">
+    <div className="group relative isolate min-h-screen overflow-hidden bg-black supports-[height:100dvh]:min-h-[100dvh]">
       {/* MAPA FULLSCREEN */}
-      <div className="absolute inset-0 z-0">
+      <div className="absolute inset-0 z-0 bg-black">
         <MapPanel
           origin={origin.coords ?? undefined}
           dest={dest.coords ?? undefined}
@@ -1739,14 +1747,7 @@ export function RequestWizard() {
                 {dispatchOptions.map((o) => {
                   const selected = selectedDispatchId === o.id;
                   const base = estimate?.price ?? 0;
-                  const mult =
-                    o.id === "opt_fast"
-                      ? 1.18
-                      : o.id === "opt_premium"
-                        ? 1.28
-                        : o.id === "opt_economy"
-                          ? 0.9
-                          : 1.0;
+                  const mult = dispatchPriceMultiplier(o.id);
                   const optionPrice = base ? Math.round(base * mult * 100) / 100 : 0;
                   return (
                     <button
