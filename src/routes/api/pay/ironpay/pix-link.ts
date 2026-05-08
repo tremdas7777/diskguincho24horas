@@ -108,32 +108,13 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         };
         if (postbackUrl) payload.postback_url = postbackUrl;
 
-        // IMPORTANT: A IronPay pode não aceitar JSON corretamente; enviar como form-urlencoded.
-        const form = new URLSearchParams();
-        for (const [k, v] of Object.entries(payload)) {
-          if (v == null) continue;
-          // nested objects/arrays handled below
-          if (typeof v === "object") continue;
-          form.set(k, String(v));
-        }
-        // cart[0][...]
-        const cart0 = (payload.cart as any)?.[0] ?? {};
-        form.set("cart[0][offer_hash]", String(cart0.offer_hash ?? offerHash));
-        if (cart0.product_hash) form.set("cart[0][product_hash]", String(cart0.product_hash));
-        form.set("cart[0][quantity]", String(cart0.quantity ?? 1));
-        form.set("cart[0][price]", String(cart0.price ?? Math.round(amountCents)));
-        // customer[...]
-        const cust = (payload.customer as any) ?? {};
-        form.set("customer[name]", String(cust.name ?? "Cliente"));
-        form.set("customer[email]", String(cust.email ?? "cliente@diskguincho.com.br"));
-
         const res = await fetch(url.toString(), {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: form.toString(),
+          body: JSON.stringify(payload),
         });
 
         const json = await res.json().catch(() => null);
