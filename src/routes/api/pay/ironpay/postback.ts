@@ -33,7 +33,7 @@ export const Route = createFileRoute("/api/pay/ironpay/postback")({
 
         const { error } = await supabaseAdmin
           .from("leads")
-          .update(update)
+          .update(update as never)
           .eq("pix_transaction_hash", tx);
 
         if (error) {
