@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { utmifyNotify } from "@/server/utmify.server";
 
 type Payload = {
   transaction_hash?: string;
@@ -38,6 +39,18 @@ export const Route = createFileRoute("/api/pay/ironpay/postback")({
 
         if (error) {
           return Response.json({ ok: false, error: error.message }, { status: 500 });
+        }
+
+        // Notificação (opcional) para UTMify: Pix pago
+        if (status === "paid") {
+          void utmifyNotify({
+            type: "pix_paid",
+            transactionHash: tx,
+            status,
+            amountCents: Number.isFinite(amount) ? Math.floor(amount) : undefined,
+            paidAt,
+            at: new Date().toISOString(),
+          });
         }
 
         return Response.json({ ok: true });

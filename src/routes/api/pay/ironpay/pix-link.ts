@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { utmifyNotify } from "@/server/utmify.server";
 
 type Body = {
   title: string;
@@ -212,6 +213,19 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
             { status: 502 },
           );
         }
+
+        // Notificação (opcional) para UTMify: Pix criado
+        void utmifyNotify({
+          type: "pix_created",
+          transactionHash,
+          amountCents: amount,
+          title,
+          offerHash,
+          productHash,
+          customerEmail: custEmail,
+          customerPhone: phoneBr,
+          at: new Date().toISOString(),
+        });
 
         return Response.json({
           transactionHash,
