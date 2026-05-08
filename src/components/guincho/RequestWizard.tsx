@@ -2020,7 +2020,7 @@ export function RequestWizard() {
             >
               {step === 4
                 ? dispatchPhase === "options"
-                  ? "Solicitar / Pagar no Pix"
+                  ? "Solicitar"
                   : dispatchPhase === "searching"
                     ? "Procurando guinchos…"
                     : "Procurar guincho"
