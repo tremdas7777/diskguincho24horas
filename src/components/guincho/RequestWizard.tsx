@@ -1012,6 +1012,7 @@ export function RequestWizard() {
             const d = phone.replace(/\D/g, "");
             return d ? `pix+${d}@diskguincho.com.br` : undefined;
           })(),
+          customerPhone: phone.replace(/\D/g, "") || undefined,
         }),
       });
       const data = (await res.json()) as any;
