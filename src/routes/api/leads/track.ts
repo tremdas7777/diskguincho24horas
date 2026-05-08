@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/leads/track")({
           // Upsert by unique lead_key
           const { error } = await supabaseAdmin
             .from("leads")
-            .upsert(update, { onConflict: "lead_key" });
+            .upsert(update as never, { onConflict: "lead_key" });
 
           if (error) {
             return Response.json({ ok: false, error: error.message }, { status: 500 });
