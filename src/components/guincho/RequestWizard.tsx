@@ -99,6 +99,23 @@ function moneyBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+function cepDigitsOk(cep: string) {
+  return onlyDigits(cep).length === 8;
+}
+
+function addressHasEnoughInfo(a: Address) {
+  const hasStreet = a.street.trim().length >= 3;
+  const hasNumber = a.number.trim().length >= 1;
+  const hasCityState = a.city.trim().length >= 2 && a.state.trim().length >= 2;
+  const hasCep = cepDigitsOk(a.cep);
+  return hasStreet && hasNumber && (hasCep || hasCityState);
+}
+
+function phoneDigitsOk(phone: string) {
+  const d = onlyDigits(phone);
+  return d.length >= 10; // (DDD + número)
+}
+
 /** Mensagem legível a partir da resposta 502 do pix-link (message + errors Laravel). */
 function ironPayUserMessage(data: unknown): string | null {
   const d = data as Record<string, unknown> | null;
@@ -468,9 +485,44 @@ export function RequestWizard() {
   }
 
   const canNext = useMemo(() => {
-    // Liberado avançar entre etapas para montar o projeto (validações ficam nas ações)
+    if (step === 5) return false;
+    if (step === 4) {
+      // Etapa de "opções/pagamento" tem CTA própria; o botão não usa next()
+      return false;
+    }
+    if (step === 0) return addressHasEnoughInfo(origin);
+    if (step === 1) return addressHasEnoughInfo(dest);
+    if (step === 2) return Boolean(vehicle);
+    if (step === 3) {
+      if (problem !== "guincho" && problem !== "pane_seca" && problem !== "pane_eletrica" && problem !== "pneu" && problem !== "acidente" && problem !== "outro") {
+        return false;
+      }
+      return name.trim().length >= 2 && phoneDigitsOk(phone);
+    }
     return true;
-  }, []);
+  }, [dest, name, origin, phone, problem, step, vehicle]);
+
+  const stepBlockReason = useMemo(() => {
+    if (step === 0) {
+      return addressHasEnoughInfo(origin)
+        ? null
+        : "Preencha a origem: rua, número e CEP (ou cidade/UF).";
+    }
+    if (step === 1) {
+      return addressHasEnoughInfo(dest)
+        ? null
+        : "Preencha o destino: rua, número e CEP (ou cidade/UF).";
+    }
+    if (step === 2) {
+      return vehicle ? null : "Selecione o tipo de veículo.";
+    }
+    if (step === 3) {
+      if (name.trim().length < 2) return "Informe seu nome.";
+      if (!phoneDigitsOk(phone)) return "Informe um WhatsApp válido (com DDD).";
+      return null;
+    }
+    return null;
+  }, [dest, name, origin, phone, step, vehicle]);
 
   async function fillByCEP(which: "origin" | "dest") {
     setErr(null);
@@ -1895,6 +1947,11 @@ export function RequestWizard() {
             <button
               type="button"
               onClick={() => {
+                const block = stepBlockReason;
+                if (block) {
+                  setErr(block);
+                  return;
+                }
                 if (step === 5) {
                   if (paymentDone) {
                     void navigate({ to: "/obrigado" });
@@ -1927,7 +1984,22 @@ export function RequestWizard() {
                   return;
                 }
                 if (step === 4) {
-                  // Sem travas: sempre permite buscar opções e iniciar pagamento.
+                  // Travas: só permite buscar/pagar quando os dados essenciais existem
+                  if (!addressHasEnoughInfo(origin) || !addressHasEnoughInfo(dest)) {
+                    setErr("Preencha origem e destino completos para solicitar o guincho.");
+                    return;
+                  }
+                  if (!origin.coords || !dest.coords || !estimate) {
+                    setErr(
+                      "Confirme origem e destino no mapa para calcular a distância e liberar o chamado.",
+                    );
+                    return;
+                  }
+                  if (name.trim().length < 2 || !phoneDigitsOk(phone)) {
+                    setErr("Informe nome e WhatsApp válidos para abrir o chamado.");
+                    setStep(3);
+                    return;
+                  }
                   if (dispatchPhase === "options") {
                     if (!selectedDispatchId && dispatchOptions.length) {
                       setSelectedDispatchId(dispatchOptions[0].id);
@@ -1942,7 +2014,7 @@ export function RequestWizard() {
               }}
               disabled={
                 Boolean(busy) ||
-                false
+                (step !== 4 && step !== 5 ? !canNext : false)
               }
               className="h-12 flex-[1.4] rounded-xl bg-[color:var(--brand)] font-semibold text-white hover:bg-[rgba(var(--brand-rgb),0.90)] disabled:opacity-50"
             >
