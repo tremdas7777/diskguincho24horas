@@ -1029,8 +1029,7 @@ export function RequestWizard() {
       }
       if (data?.url) {
         setPixUrl(String(data.url));
-        // fallback: copy is the same URL if Beehive doesn't expose the Pix payload here
-        setPixCopy(String(data.url));
+        setPixCopy(String(data.copyText ?? data.url));
         const tx = String(data.transactionHash ?? "");
         setPixTransactionHash(tx);
         void trackLead({
