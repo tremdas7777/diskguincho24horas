@@ -1891,7 +1891,7 @@ export function RequestWizard() {
             >
               {step === 4
                 ? dispatchPhase === "options"
-                  ? "Solicitar"
+                  ? "Solicitar / Pagar no Pix"
                   : dispatchPhase === "searching"
                     ? "Procurando guinchos…"
                     : "Procurar guincho"

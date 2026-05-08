@@ -1,8 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** Oferta padrão na IronPay; sobrescreva com IRONPAY_OFFER_HASH no ambiente. */
-const DEFAULT_IRONPAY_OFFER_HASH = "tlvh7fvagm";
-
 type Body = {
   title: string;
   amountCents: number;
@@ -12,14 +9,15 @@ type Body = {
   customerEmail?: string;
 };
 
-function resolveProductHash(dispatchOption: string | undefined): string {
+function resolveProductHash(
+  dispatchOption: string | undefined,
+  offerFallback: string,
+): string {
   const key = ((dispatchOption ?? "").trim() || "opt_fast").toLowerCase();
   const fast = (process.env.IRONPAY_PRODUCT_HASH_FAST ?? "").trim();
   const premium = (process.env.IRONPAY_PRODUCT_HASH_PREMIUM ?? "").trim();
   const economy = (process.env.IRONPAY_PRODUCT_HASH_ECONOMY ?? "").trim();
   const single = (process.env.IRONPAY_PRODUCT_HASH ?? "").trim();
-  const offerFallback =
-    (process.env.IRONPAY_OFFER_HASH ?? "").trim() || DEFAULT_IRONPAY_OFFER_HASH;
 
   let tier = "";
   if (key === "opt_premium") tier = premium;
@@ -32,19 +30,21 @@ function resolveProductHash(dispatchOption: string | undefined): string {
 /**
  * IronPay (API Pública) - gera link de pagamento PIX.
  *
- * Env (Lovable / servidor):
+ * Env (Lovable / servidor) — obrigatórios:
  * - IRONPAY_API_TOKEN
- * - IRONPAY_PRODUCT_HASH_FAST, IRONPAY_PRODUCT_HASH_PREMIUM, IRONPAY_PRODUCT_HASH_ECONOMY
- *   (ou IRONPAY_PRODUCT_HASH único como fallback para todas)
- * - IRONPAY_OFFER_HASH (opcional; default conta: tlvh7fvagm)
- * - IRONPAY_POSTBACK_URL (opcional)
- * - IRONPAY_OPERATION_TYPE (opcional, default "sale")
+ * - IRONPAY_OFFER_HASH
+ *
+ * Opcionais:
+ * - IRONPAY_POSTBACK_URL
+ * - IRONPAY_PRODUCT_HASH (ou _FAST/_PREMIUM/_ECONOMY) — se ausente, usa o offer_hash
+ * - IRONPAY_OPERATION_TYPE (default "sale")
  */
 export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
   server: {
     handlers: {
       POST: async ({ request }) => {
         const apiToken = (process.env.IRONPAY_API_TOKEN ?? "").trim();
+        const offerHash = (process.env.IRONPAY_OFFER_HASH ?? "").trim();
         const postbackUrl = (process.env.IRONPAY_POSTBACK_URL ?? "").trim();
         const operationType =
           (process.env.IRONPAY_OPERATION_TYPE ?? "").trim() || "sale";
@@ -52,6 +52,12 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         if (!apiToken) {
           return Response.json(
             { error: "Missing IRONPAY_API_TOKEN" },
+            { status: 500 },
+          );
+        }
+        if (!offerHash) {
+          return Response.json(
+            { error: "Missing IRONPAY_OFFER_HASH" },
             { status: 500 },
           );
         }
@@ -64,20 +70,8 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           return Response.json({ error: "Invalid payload" }, { status: 400 });
         }
 
-        const productHash = resolveProductHash(body.dispatchOption);
-        if (!productHash) {
-          return Response.json(
-            {
-              error:
-                "Missing product hash env: set IRONPAY_PRODUCT_HASH_FAST/PREMIUM/ECONOMY (or IRONPAY_PRODUCT_HASH / IRONPAY_OFFER_HASH)",
-            },
-            { status: 500 },
-          );
-        }
-
-        const offerHashFromEnv = (process.env.IRONPAY_OFFER_HASH ?? "").trim();
-        const offerHash =
-          offerHashFromEnv || DEFAULT_IRONPAY_OFFER_HASH || productHash;
+        // Se não houver product_hash configurado, reutiliza o offer_hash.
+        const productHash = resolveProductHash(body.dispatchOption, offerHash);
 
         const custName =
           (body.customerName ?? "").trim() || "Cliente Disk Guincho";
