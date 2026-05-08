@@ -65,6 +65,7 @@ export type Database = {
           current_step: number
           dest_city: string | null
           dest_state: string | null
+          first_seen_at: string
           id: string
           last_seen_at: string
           lead_key: string
@@ -88,6 +89,7 @@ export type Database = {
           current_step?: number
           dest_city?: string | null
           dest_state?: string | null
+          first_seen_at?: string
           id?: string
           last_seen_at?: string
           lead_key: string
@@ -111,6 +113,7 @@ export type Database = {
           current_step?: number
           dest_city?: string | null
           dest_state?: string | null
+          first_seen_at?: string
           id?: string
           last_seen_at?: string
           lead_key?: string
