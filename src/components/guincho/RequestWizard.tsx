@@ -1497,6 +1497,37 @@ export function RequestWizard() {
                       : d.state,
                     cep: cepOk ? maskCEP(parts!.cepDigits!) : d.cep,
                   }));
+
+                  // Nem sempre o Nominatim retorna CEP no /search; se faltar, fazemos reverse pelo ponto escolhido.
+                  if (!cepOk) {
+                    void (async () => {
+                      try {
+                        const url = new URL("/api/reverse", window.location.origin);
+                        url.searchParams.set("lat", String(coords.lat));
+                        url.searchParams.set("lng", String(coords.lng));
+                        const res = await fetch(url.toString(), { cache: "no-store" });
+                        const data = (await res.json().catch(() => null)) as
+                          | { parts?: { cepDigits?: string; street?: string; city?: string; state?: string; neighborhood?: string; number?: string } }
+                          | null;
+                        const cepDigits = String(data?.parts?.cepDigits ?? "").replace(/\D/g, "");
+                        if (cepDigits.length !== 8) return;
+                        setDest((d) => ({
+                          ...d,
+                          cep: maskCEP(cepDigits),
+                          // opcionalmente reforça campos que vierem vazios
+                          street: d.street || String(data?.parts?.street ?? ""),
+                          number: d.number || String(data?.parts?.number ?? ""),
+                          neighborhood:
+                            d.neighborhood || String(data?.parts?.neighborhood ?? ""),
+                          city: d.city || String(data?.parts?.city ?? ""),
+                          state:
+                            d.state || String(data?.parts?.state ?? "").toUpperCase().slice(0, 2),
+                        }));
+                      } catch {
+                        // ignore
+                      }
+                    })();
+                  }
                 }}
               />
               
