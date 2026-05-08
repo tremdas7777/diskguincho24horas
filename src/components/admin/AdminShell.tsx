@@ -9,7 +9,14 @@ export function AdminShell({
 }: {
   title: string;
   subtitle?: string;
-  active: "dashboard" | "funil" | "settings" | "leads" | "financas" | "analytics";
+  active:
+    | "dashboard"
+    | "funil"
+    | "leads"
+    | "financas"
+    | "utms"
+    | "analytics"
+    | "settings";
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
@@ -24,6 +31,7 @@ export function AdminShell({
     { id: "funil", label: "Funil", to: "/admin/funil" },
     { id: "leads", label: "Leads", to: "/admin/leads" },
     { id: "financas", label: "Finanças", to: "/admin/financas" },
+    { id: "utms", label: "UTMs", to: "/admin/utms" },
     { id: "analytics", label: "Pixel/Ads", to: "/admin/analytics" },
     { id: "settings", label: "Config", to: "/admin/settings" },
   ];
