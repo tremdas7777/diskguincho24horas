@@ -89,8 +89,11 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         url.searchParams.set("api_token", apiToken);
 
         const amount = Math.round(amountCents);
+        // IronPay valida `title` na transação raiz; `amount`/`cart[].price` vêm do cálculo do app (centavos).
         const payload: Record<string, unknown> = {
           offer_hash: offerHash,
+          title,
+          name: title,
           amount,
           payment_method: "pix",
           installments: 1,
@@ -102,6 +105,7 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           },
           cart: [
             {
+              offer_hash: offerHash,
               product_hash: productHash,
               title,
               price: amount,
@@ -121,6 +125,10 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
             form.set(k, String(v));
           }
           const cart0 = (payload.cart as Record<string, unknown>[])?.[0] ?? {};
+          form.set(
+            "cart[0][offer_hash]",
+            String(cart0.offer_hash ?? offerHash),
+          );
           form.set(
             "cart[0][product_hash]",
             String(cart0.product_hash ?? productHash),

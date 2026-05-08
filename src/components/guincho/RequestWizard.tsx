@@ -99,6 +99,34 @@ function moneyBRL(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
+/** Mensagem legível a partir da resposta 502 do pix-link (message + errors Laravel). */
+function ironPayUserMessage(data: unknown): string | null {
+  const d = data as Record<string, unknown> | null;
+  if (!d) return null;
+  const details = d.details;
+  if (typeof details === "string" && details.trim()) return details.trim();
+  if (details && typeof details === "object") {
+    const det = details as Record<string, unknown>;
+    const msg = det.message;
+    const errs = det.errors;
+    const errParts =
+      errs && typeof errs === "object" && !Array.isArray(errs)
+        ? Object.entries(errs as Record<string, unknown>).flatMap(([k, v]) =>
+            Array.isArray(v)
+              ? v.map((x) => `${k}: ${String(x)}`)
+              : [`${k}: ${String(v)}`],
+          )
+        : [];
+    if (typeof msg === "string" && msg.trim()) {
+      return errParts.length ? `${msg.trim()} — ${errParts.join(". ")}` : msg.trim();
+    }
+    if (errParts.length) return errParts.join(". ");
+  }
+  const top = d.error;
+  if (typeof top === "string" && top.trim()) return top.trim();
+  return null;
+}
+
 function calcPriceBRL({
   km,
 }: {
@@ -1017,13 +1045,10 @@ export function RequestWizard() {
       });
       const data = (await res.json()) as any;
       if (!res.ok) {
-        const msg =
-          data?.details?.message ??
-          data?.error ??
-          (typeof data?.details === "string" ? data.details : null);
+        const msg = ironPayUserMessage(data);
         setErr(
           msg
-            ? `Erro ao gerar Pix (IronPay): ${String(msg)}`
+            ? `Erro ao gerar Pix (IronPay): ${msg}`
             : "Erro ao gerar Pix (IronPay). Verifique as configurações.",
         );
         return;
