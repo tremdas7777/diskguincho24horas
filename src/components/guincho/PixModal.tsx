@@ -18,6 +18,7 @@ export function PixModal({
   copyText: string;
 }) {
   const [qr, setQr] = useState<string>("");
+  const [qrReady, setQrReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [proofFileName, setProofFileName] = useState("");
   const [proofBusy, setProofBusy] = useState<null | "encoding" | "uploading">(
@@ -31,13 +32,24 @@ export function PixModal({
   useEffect(() => {
     if (!open) return;
     let mounted = true;
+    const startedAt = Date.now();
+    const minMs = 1200; // evita “piscar” quando o QR gera rápido demais
     setQr("");
+    setQrReady(false);
     QRCode.toDataURL(pixUrl, { margin: 1, width: 640 })
       .then((data) => {
-        if (mounted) setQr(data);
+        if (!mounted) return;
+        setQr(data);
+        const wait = Math.max(0, minMs - (Date.now() - startedAt));
+        window.setTimeout(() => {
+          if (mounted) setQrReady(true);
+        }, wait);
       })
       .catch(() => {
-        if (mounted) setQr("");
+        if (mounted) {
+          setQr("");
+          setQrReady(true);
+        }
       });
     return () => {
       mounted = false;
@@ -100,7 +112,7 @@ export function PixModal({
           </div>
 
           <div className="grid place-items-center rounded-2xl border border-border bg-black/20 p-3">
-            {qr ? (
+            {qr && qrReady ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 alt="QR Code Pix"
