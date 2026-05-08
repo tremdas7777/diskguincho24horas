@@ -9,24 +9,6 @@ type Body = {
   customerEmail?: string;
 };
 
-function resolveProductHash(
-  dispatchOption: string | undefined,
-  offerFallback: string,
-): string {
-  const key = ((dispatchOption ?? "").trim() || "opt_fast").toLowerCase();
-  const fast = (process.env.IRONPAY_PRODUCT_HASH_FAST ?? "").trim();
-  const premium = (process.env.IRONPAY_PRODUCT_HASH_PREMIUM ?? "").trim();
-  const economy = (process.env.IRONPAY_PRODUCT_HASH_ECONOMY ?? "").trim();
-  const single = (process.env.IRONPAY_PRODUCT_HASH ?? "").trim();
-
-  let tier = "";
-  if (key === "opt_premium") tier = premium;
-  else if (key === "opt_economy") tier = economy;
-  else if (key === "opt_fast") tier = fast;
-
-  return tier || single || offerFallback || "";
-}
-
 /**
  * IronPay (API Pública) - gera link de pagamento PIX.
  *
@@ -46,8 +28,6 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         const apiToken = (process.env.IRONPAY_API_TOKEN ?? "").trim();
         const offerHash = (process.env.IRONPAY_OFFER_HASH ?? "").trim();
         const postbackUrl = (process.env.IRONPAY_POSTBACK_URL ?? "").trim();
-        const operationType =
-          (process.env.IRONPAY_OPERATION_TYPE ?? "").trim() || "sale";
 
         if (!apiToken) {
           return Response.json(
@@ -70,9 +50,6 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           return Response.json({ error: "Invalid payload" }, { status: 400 });
         }
 
-        // Se não houver product_hash configurado, reutiliza o offer_hash.
-        const productHash = resolveProductHash(body.dispatchOption, offerHash);
-
         const custName =
           (body.customerName ?? "").trim() || "Cliente Disk Guincho";
         const custEmail =
@@ -81,59 +58,40 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
         const url = new URL(
           "https://api.ironpayapp.com.br/api/public/v1/transactions",
         );
-        // Doc: autenticação via parâmetro api_token
         url.searchParams.set("api_token", apiToken);
 
-        // A IronPay costuma exigir cart/customer e campos como product_hash/operation_type.
+        const amount = Math.round(amountCents);
         const payload: Record<string, unknown> = {
           offer_hash: offerHash,
-          product_hash: productHash,
-          operation_type: operationType,
+          amount,
           payment_method: "pix",
-          amount: Math.round(amountCents),
-          title,
-          name: title,
-          cart: [
-            {
-              offer_hash: offerHash,
-              product_hash: productHash,
-              quantity: 1,
-              price: Math.round(amountCents),
-            },
-          ],
+          installments: 1,
           customer: {
             name: custName,
             email: custEmail,
+            document: "12345678909",
+            phone_number: "11999999999",
           },
+          cart: [
+            {
+              product_hash: offerHash,
+              title,
+              price: amount,
+              quantity: 1,
+              operation_type: 1,
+              tangible: false,
+            },
+          ],
         };
         if (postbackUrl) payload.postback_url = postbackUrl;
-
-        // IMPORTANT: A IronPay pode não aceitar JSON corretamente; enviar como form-urlencoded.
-        const form = new URLSearchParams();
-        for (const [k, v] of Object.entries(payload)) {
-          if (v == null) continue;
-          // nested objects/arrays handled below
-          if (typeof v === "object") continue;
-          form.set(k, String(v));
-        }
-        // cart[0][...]
-        const cart0 = (payload.cart as any)?.[0] ?? {};
-        form.set("cart[0][offer_hash]", String(cart0.offer_hash ?? offerHash));
-        if (cart0.product_hash) form.set("cart[0][product_hash]", String(cart0.product_hash));
-        form.set("cart[0][quantity]", String(cart0.quantity ?? 1));
-        form.set("cart[0][price]", String(cart0.price ?? Math.round(amountCents)));
-        // customer[...]
-        const cust = (payload.customer as any) ?? {};
-        form.set("customer[name]", String(cust.name ?? "Cliente"));
-        form.set("customer[email]", String(cust.email ?? "cliente@diskguincho.com.br"));
 
         const res = await fetch(url.toString(), {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+            "Content-Type": "application/json",
             Accept: "application/json",
           },
-          body: form.toString(),
+          body: JSON.stringify(payload),
         });
 
         const json = await res.json().catch(() => null);
@@ -144,32 +102,33 @@ export const Route = createFileRoute("/api/pay/ironpay/pix-link")({
           );
         }
 
-        // Tentamos extrair um link de pagamento em campos comuns.
-        const link =
-          (json?.url as string | undefined) ||
-          (json?.payment_url as string | undefined) ||
-          (json?.link as string | undefined) ||
-          (json?.data?.url as string | undefined) ||
-          (json?.data?.payment_url as string | undefined) ||
+        // IronPay retorna o BR Code Pix em pix.pix_qr_code (string copia-e-cola).
+        const pix = (json?.pix ?? {}) as Record<string, unknown>;
+        const pixCode =
+          (pix.pix_qr_code as string | undefined) ||
+          (pix.qr_code as string | undefined) ||
           "";
-
+        const pixUrl =
+          (pix.pix_url as string | undefined) ||
+          (pix.qr_code_base64 as string | undefined) ||
+          pixCode;
         const transactionHash =
-          (json?.transaction_hash as string | undefined) ||
           (json?.hash as string | undefined) ||
-          (json?.data?.transaction_hash as string | undefined) ||
+          (json?.transaction as string | undefined) ||
           "";
 
-        if (!link) {
+        if (!pixCode) {
           return Response.json(
-            {
-              error: "IronPay response missing payment link",
-              details: json,
-            },
+            { error: "IronPay response missing Pix code", details: json },
             { status: 502 },
           );
         }
 
-        return Response.json({ transactionHash, url: link, raw: json });
+        return Response.json({
+          transactionHash,
+          url: pixUrl || pixCode,
+          copyText: pixCode,
+        });
       },
     },
   },

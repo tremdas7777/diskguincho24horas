@@ -104,8 +104,8 @@ export function AnalyticsProvider({ children }: { children: React.ReactNode }) {
         void loadScript("https://connect.facebook.net/en_US/fbevents.js");
       }
       try {
-        window.fbq("init", cfg.metaPixelId);
-        window.fbq("track", "PageView");
+        window.fbq?.("init", cfg.metaPixelId);
+        window.fbq?.("track", "PageView");
       } catch {
         // ignore
       }

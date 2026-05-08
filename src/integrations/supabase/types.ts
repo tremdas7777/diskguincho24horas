@@ -20,24 +20,117 @@ export type Database = {
           beehive_secret_key: string | null
           created_at: string
           gateway_provider: string
+          google_ads_conversion_id: string | null
+          google_ads_conversion_label: string | null
+          google_ads_enabled: boolean
           id: number
+          meta_pixel_enabled: boolean
+          meta_pixel_id: string | null
           updated_at: string
+          utm_tracking_enabled: boolean
         }
         Insert: {
           beehive_public_key?: string | null
           beehive_secret_key?: string | null
           created_at?: string
           gateway_provider?: string
+          google_ads_conversion_id?: string | null
+          google_ads_conversion_label?: string | null
+          google_ads_enabled?: boolean
           id?: number
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
           updated_at?: string
+          utm_tracking_enabled?: boolean
         }
         Update: {
           beehive_public_key?: string | null
           beehive_secret_key?: string | null
           created_at?: string
           gateway_provider?: string
+          google_ads_conversion_id?: string | null
+          google_ads_conversion_label?: string | null
+          google_ads_enabled?: boolean
           id?: number
+          meta_pixel_enabled?: boolean
+          meta_pixel_id?: string | null
           updated_at?: string
+          utm_tracking_enabled?: boolean
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          created_at: string
+          current_step: number
+          dest_city: string | null
+          dest_state: string | null
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          lead_key: string
+          name: string | null
+          origin_city: string | null
+          origin_state: string | null
+          paid_at: string | null
+          phone: string | null
+          pix_amount_cents: number | null
+          pix_status: string | null
+          pix_transaction_hash: string | null
+          updated_at: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          dest_city?: string | null
+          dest_state?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          lead_key: string
+          name?: string | null
+          origin_city?: string | null
+          origin_state?: string | null
+          paid_at?: string | null
+          phone?: string | null
+          pix_amount_cents?: number | null
+          pix_status?: string | null
+          pix_transaction_hash?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          dest_city?: string | null
+          dest_state?: string | null
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          lead_key?: string
+          name?: string | null
+          origin_city?: string | null
+          origin_state?: string | null
+          paid_at?: string | null
+          phone?: string | null
+          pix_amount_cents?: number | null
+          pix_status?: string | null
+          pix_transaction_hash?: string | null
+          updated_at?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: []
       }

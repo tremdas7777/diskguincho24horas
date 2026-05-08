@@ -634,13 +634,14 @@ export function RequestWizard() {
       askBrowserOnceThenWatch();
 
       if (perm) {
-        perm.onchange = () => {
+        const p = perm;
+        p.onchange = () => {
           if (cancelled) return;
-          if (perm.state === "denied") {
+          if (p.state === "denied") {
             clearGpsWatch();
             return;
           }
-          if (perm.state === "granted" && gpsWatchIdRef.current == null) {
+          if (p.state === "granted" && gpsWatchIdRef.current == null) {
             askBrowserOnceThenWatch();
           }
         };
@@ -1028,8 +1029,7 @@ export function RequestWizard() {
       }
       if (data?.url) {
         setPixUrl(String(data.url));
-        // fallback: copy is the same URL if Beehive doesn't expose the Pix payload here
-        setPixCopy(String(data.url));
+        setPixCopy(String(data.copyText ?? data.url));
         const tx = String(data.transactionHash ?? "");
         setPixTransactionHash(tx);
         void trackLead({

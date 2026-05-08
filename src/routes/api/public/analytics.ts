@@ -7,16 +7,7 @@ export const Route = createFileRoute("/api/public/analytics")({
       GET: async () => {
         const { data, error } = await supabaseAdmin
           .from("app_settings")
-          .select(
-            [
-              "google_ads_enabled",
-              "google_ads_conversion_id",
-              "google_ads_conversion_label",
-              "meta_pixel_enabled",
-              "meta_pixel_id",
-              "utm_tracking_enabled",
-            ].join(","),
-          )
+          .select("google_ads_enabled, google_ads_conversion_id, google_ads_conversion_label, meta_pixel_enabled, meta_pixel_id, utm_tracking_enabled")
           .eq("id", 1)
           .maybeSingle();
 
