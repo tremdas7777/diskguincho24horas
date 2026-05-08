@@ -634,13 +634,14 @@ export function RequestWizard() {
       askBrowserOnceThenWatch();
 
       if (perm) {
-        perm.onchange = () => {
+        const p = perm;
+        p.onchange = () => {
           if (cancelled) return;
-          if (perm.state === "denied") {
+          if (p.state === "denied") {
             clearGpsWatch();
             return;
           }
-          if (perm.state === "granted" && gpsWatchIdRef.current == null) {
+          if (p.state === "granted" && gpsWatchIdRef.current == null) {
             askBrowserOnceThenWatch();
           }
         };
