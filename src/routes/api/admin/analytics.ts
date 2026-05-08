@@ -13,7 +13,9 @@ export const Route = createFileRoute("/api/admin/analytics")({
 
         const { data, error } = await supabaseAdmin
           .from("app_settings")
-          .select("google_ads_enabled, google_ads_conversion_id, google_ads_conversion_label, meta_pixel_enabled, meta_pixel_id, utm_tracking_enabled, updated_at")
+          .select(
+            "google_ads_enabled, google_ads_conversion_id, google_ads_conversion_label, meta_pixel_enabled, meta_pixel_id, utm_tracking_enabled, utmify_notifications_enabled, utmify_webhook_url, updated_at",
+          )
           .eq("id", 1)
           .maybeSingle();
         if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -28,6 +30,10 @@ export const Route = createFileRoute("/api/admin/analytics")({
             data?.utm_tracking_enabled == null
               ? true
               : Boolean(data.utm_tracking_enabled),
+          utmifyNotificationsEnabled: Boolean(
+            (data as any)?.utmify_notifications_enabled,
+          ),
+          utmifyWebhookUrl: String((data as any)?.utmify_webhook_url ?? ""),
           updatedAt: (data?.updated_at as string | null) ?? null,
         });
       },
@@ -38,6 +44,7 @@ export const Route = createFileRoute("/api/admin/analytics")({
         }
 
         const body = (await request.json().catch(() => null)) as any;
+        const webhookUrl = String(body?.utmifyWebhookUrl ?? "").trim() || null;
         const update: Record<string, unknown> = {
           google_ads_enabled: Boolean(body?.googleAdsEnabled),
           google_ads_conversion_id: String(body?.googleAdsConversionId ?? "").trim() || null,
@@ -46,6 +53,8 @@ export const Route = createFileRoute("/api/admin/analytics")({
           meta_pixel_enabled: Boolean(body?.metaPixelEnabled),
           meta_pixel_id: String(body?.metaPixelId ?? "").trim() || null,
           utm_tracking_enabled: body?.utmTrackingEnabled == null ? true : Boolean(body.utmTrackingEnabled),
+          utmify_notifications_enabled: Boolean(body?.utmifyNotificationsEnabled),
+          utmify_webhook_url: webhookUrl,
         };
 
         const { error } = await supabaseAdmin

@@ -21,6 +21,9 @@ function AdminAnalyticsPage() {
   const [googleAdsConversionLabel, setGoogleAdsConversionLabel] = useState("");
   const [metaPixelEnabled, setMetaPixelEnabled] = useState(false);
   const [metaPixelId, setMetaPixelId] = useState("");
+  const [utmifyNotificationsEnabled, setUtmifyNotificationsEnabled] =
+    useState(false);
+  const [utmifyWebhookUrl, setUtmifyWebhookUrl] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -48,6 +51,8 @@ function AdminAnalyticsPage() {
         setGoogleAdsConversionLabel(String(s.googleAdsConversionLabel ?? ""));
         setMetaPixelEnabled(Boolean(s.metaPixelEnabled));
         setMetaPixelId(String(s.metaPixelId ?? ""));
+        setUtmifyNotificationsEnabled(Boolean(s.utmifyNotificationsEnabled));
+        setUtmifyWebhookUrl(String(s.utmifyWebhookUrl ?? ""));
       } catch (e: any) {
         if (!active) return;
         setErr(e?.message ?? "Falha ao carregar");
@@ -81,6 +86,8 @@ function AdminAnalyticsPage() {
           googleAdsConversionLabel,
           metaPixelEnabled,
           metaPixelId,
+          utmifyNotificationsEnabled,
+          utmifyWebhookUrl,
         }),
       });
       const data = (await res.json().catch(() => null)) as any;
@@ -187,6 +194,38 @@ function AdminAnalyticsPage() {
                 onChange={(e) => setMetaPixelId(e.target.value)}
                 className="h-12 rounded-2xl border border-white/20 bg-black/55 px-4 outline-none placeholder:text-white/55"
                 placeholder="123456789012345"
+              />
+            </label>
+          </div>
+
+          <div className="grid gap-3 rounded-3xl border border-[color:var(--color-border)] bg-black/10 p-4">
+            <div className="text-sm font-semibold">Notificações (UTMify)</div>
+            <div className="text-xs text-[color:var(--color-muted)]">
+              Ative para enviar eventos quando o Pix for criado e quando for pago.
+              O token fica nos Secrets do Lovable; aqui é só a URL do webhook.
+            </div>
+
+            <div className="flex items-center justify-between gap-3">
+              <div className="text-sm font-semibold">Ativo</div>
+              <label className="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={utmifyNotificationsEnabled}
+                  onChange={(e) => setUtmifyNotificationsEnabled(e.target.checked)}
+                />
+                <span className="text-[color:var(--color-muted)]">
+                  Notificações
+                </span>
+              </label>
+            </div>
+
+            <label className="grid gap-1">
+              <div className="text-sm font-semibold">Webhook URL</div>
+              <input
+                value={utmifyWebhookUrl}
+                onChange={(e) => setUtmifyWebhookUrl(e.target.value)}
+                className="h-12 rounded-2xl border border-white/20 bg-black/55 px-4 outline-none placeholder:text-white/55"
+                placeholder="https://..."
               />
             </label>
           </div>
