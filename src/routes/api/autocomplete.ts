@@ -4,7 +4,17 @@ import { partsFromNominatimAddress } from "@/lib/guincho/nominatimParts";
 
 type RawNominatim = Record<string, any>;
 
-function mapSuggestions(data: RawNominatim[]) {
+interface Suggestion {
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
+  address: any;
+  parts: ReturnType<typeof partsFromNominatimAddress>;
+  distanceKm?: number;
+}
+
+function mapSuggestions(data: RawNominatim[]): Suggestion[] {
   return (data ?? [])
     .map((it) => {
       const addr = (it.address ?? null) as Record<string, unknown> | null;
@@ -20,9 +30,9 @@ function mapSuggestions(data: RawNominatim[]) {
     .filter((s) => s.label && Number.isFinite(s.lat) && Number.isFinite(s.lng));
 }
 
-function dedupeById<T extends { id: string }>(items: T[]): T[] {
+function dedupeById(items: Suggestion[]): Suggestion[] {
   const seen = new Set<string>();
-  const out: T[] = [];
+  const out: Suggestion[] = [];
   for (const it of items) {
     if (seen.has(it.id)) continue;
     seen.add(it.id);
