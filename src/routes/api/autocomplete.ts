@@ -101,7 +101,7 @@ export const Route = createFileRoute("/api/autocomplete")({
         const ref: LatLng | null = hasBias ? { lat, lng } : null;
         const maxDistanceKm = 35; // limita resultados mais próximos do cliente
 
-        const withDistance = <T extends { lat: number; lng: number }>(items: T[]) =>
+        const withDistance = (items: Suggestion[]) =>
           ref
             ? items.map((s) => ({
                 ...s,
@@ -109,7 +109,7 @@ export const Route = createFileRoute("/api/autocomplete")({
               }))
             : items;
 
-        const filterAndSortNear = <T extends { distanceKm?: number }>(items: T[]) => {
+        const filterAndSortNear = (items: Suggestion[]) => {
           if (!ref) return items;
           return items
             .filter(
