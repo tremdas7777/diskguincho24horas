@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as OrigemRouteImport } from './routes/origem'
 import { Route as ObrigadoRouteImport } from './routes/obrigado'
 import { Route as DestinoRouteImport } from './routes/destino'
+import { Route as CuriosidadesCgmRouteImport } from './routes/curiosidades-cgm'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
@@ -55,6 +56,11 @@ const ObrigadoRoute = ObrigadoRouteImport.update({
 const DestinoRoute = DestinoRouteImport.update({
   id: '/destino',
   path: '/destino',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CuriosidadesCgmRoute = CuriosidadesCgmRouteImport.update({
+  id: '/curiosidades-cgm',
+  path: '/curiosidades-cgm',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -207,6 +213,7 @@ const ApiPayBeehivePaymentLinkRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curiosidades-cgm': typeof CuriosidadesCgmRoute
   '/destino': typeof DestinoRoute
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
@@ -241,6 +248,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curiosidades-cgm': typeof CuriosidadesCgmRoute
   '/destino': typeof DestinoRoute
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
@@ -276,6 +284,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/curiosidades-cgm': typeof CuriosidadesCgmRoute
   '/destino': typeof DestinoRoute
   '/obrigado': typeof ObrigadoRoute
   '/origem': typeof OrigemRoute
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/curiosidades-cgm'
     | '/destino'
     | '/obrigado'
     | '/origem'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/curiosidades-cgm'
     | '/destino'
     | '/obrigado'
     | '/origem'
@@ -380,6 +391,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/curiosidades-cgm'
     | '/destino'
     | '/obrigado'
     | '/origem'
@@ -415,6 +427,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  CuriosidadesCgmRoute: typeof CuriosidadesCgmRoute
   DestinoRoute: typeof DestinoRoute
   ObrigadoRoute: typeof ObrigadoRoute
   OrigemRoute: typeof OrigemRoute
@@ -468,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/destino'
       fullPath: '/destino'
       preLoaderRoute: typeof DestinoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/curiosidades-cgm': {
+      id: '/curiosidades-cgm'
+      path: '/curiosidades-cgm'
+      fullPath: '/curiosidades-cgm'
+      preLoaderRoute: typeof CuriosidadesCgmRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -679,6 +699,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  CuriosidadesCgmRoute: CuriosidadesCgmRoute,
   DestinoRoute: DestinoRoute,
   ObrigadoRoute: ObrigadoRoute,
   OrigemRoute: OrigemRoute,
@@ -713,13 +734,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

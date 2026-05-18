@@ -4,7 +4,17 @@ import { partsFromNominatimAddress } from "@/lib/guincho/nominatimParts";
 
 type RawNominatim = Record<string, any>;
 
-function mapSuggestions(data: RawNominatim[]) {
+interface Suggestion {
+  id: string;
+  label: string;
+  lat: number;
+  lng: number;
+  address: any;
+  parts: ReturnType<typeof partsFromNominatimAddress>;
+  distanceKm?: number;
+}
+
+function mapSuggestions(data: RawNominatim[]): Suggestion[] {
   return (data ?? [])
     .map((it) => {
       const addr = (it.address ?? null) as Record<string, unknown> | null;
@@ -20,9 +30,9 @@ function mapSuggestions(data: RawNominatim[]) {
     .filter((s) => s.label && Number.isFinite(s.lat) && Number.isFinite(s.lng));
 }
 
-function dedupeById<T extends { id: string }>(items: T[]): T[] {
+function dedupeById(items: Suggestion[]): Suggestion[] {
   const seen = new Set<string>();
-  const out: T[] = [];
+  const out: Suggestion[] = [];
   for (const it of items) {
     if (seen.has(it.id)) continue;
     seen.add(it.id);
@@ -91,7 +101,7 @@ export const Route = createFileRoute("/api/autocomplete")({
         const ref: LatLng | null = hasBias ? { lat, lng } : null;
         const maxDistanceKm = 35; // limita resultados mais próximos do cliente
 
-        const withDistance = <T extends { lat: number; lng: number }>(items: T[]) =>
+        const withDistance = (items: Suggestion[]) =>
           ref
             ? items.map((s) => ({
                 ...s,
@@ -99,7 +109,7 @@ export const Route = createFileRoute("/api/autocomplete")({
               }))
             : items;
 
-        const filterAndSortNear = <T extends { distanceKm?: number }>(items: T[]) => {
+        const filterAndSortNear = (items: Suggestion[]) => {
           if (!ref) return items;
           return items
             .filter(
@@ -163,7 +173,7 @@ export const Route = createFileRoute("/api/autocomplete")({
           const resWide = await fetchSearch(q, { d: 1.2, bounded: false });
           if (resWide.ok) {
             suggestions = withDistance(mapSuggestions(resWide.data)).sort(
-              (a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0),
+              (a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0),
             );
           }
         }
