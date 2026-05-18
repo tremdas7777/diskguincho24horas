@@ -173,7 +173,7 @@ export const Route = createFileRoute("/api/autocomplete")({
           const resWide = await fetchSearch(q, { d: 1.2, bounded: false });
           if (resWide.ok) {
             suggestions = withDistance(mapSuggestions(resWide.data)).sort(
-              (a: any, b: any) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0),
+              (a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0),
             );
           }
         }
