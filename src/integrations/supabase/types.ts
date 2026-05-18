@@ -28,6 +28,8 @@ export type Database = {
           meta_pixel_id: string | null
           updated_at: string
           utm_tracking_enabled: boolean
+          utmify_notifications_enabled: boolean
+          utmify_webhook_url: string | null
         }
         Insert: {
           beehive_public_key?: string | null
@@ -42,6 +44,8 @@ export type Database = {
           meta_pixel_id?: string | null
           updated_at?: string
           utm_tracking_enabled?: boolean
+          utmify_notifications_enabled?: boolean
+          utmify_webhook_url?: string | null
         }
         Update: {
           beehive_public_key?: string | null
@@ -56,6 +60,8 @@ export type Database = {
           meta_pixel_id?: string | null
           updated_at?: string
           utm_tracking_enabled?: boolean
+          utmify_notifications_enabled?: boolean
+          utmify_webhook_url?: string | null
         }
         Relationships: []
       }
